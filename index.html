@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ReportFlow Pro</title>
+  <style>
+    :root{
+      --bg:#0b1117;--panel:#111a23;--panel2:#16222d;--text:#eef3f7;--muted:#9eb0bf;
+      --accent:#d1a64a;--accent2:#2ba37a;--danger:#d96060;--warn:#e3ad4f;--border:#263645;
+      --shadow:0 16px 44px rgba(0,0,0,.28)
+    }
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(140deg,#071018 0,#0b1117 46%,#111b23 100%);color:var(--text)}
+    button,input,select{font:inherit}.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}.sidebar{background:#0a1016;border-right:1px solid var(--border);padding:24px 18px;position:sticky;top:0;height:100vh}.brand{display:flex;gap:11px;align-items:center;margin-bottom:30px}.mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#7d6228);display:grid;place-items:center;color:#101010;font-weight:900;box-shadow:var(--shadow)}.brand h1{font-size:18px;margin:0}.brand small{color:var(--muted)}
+    .nav{display:grid;gap:8px}.nav button{width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--muted);padding:12px 14px;border-radius:10px;cursor:pointer}.nav button.active,.nav button:hover{background:var(--panel);border-color:var(--border);color:var(--text)}.side-note{position:absolute;bottom:22px;left:18px;right:18px;color:var(--muted);font-size:12px;line-height:1.5}
+    .main{padding:28px;max-width:1500px;width:100%;margin:0 auto}.topbar{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px}.title h2{margin:0;font-size:28px}.title p{margin:5px 0 0;color:var(--muted)}.actions{display:flex;gap:10px}.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:#15120a;font-weight:800}.btn.green{background:var(--accent2);border-color:var(--accent2);font-weight:800}.btn:hover{filter:brightness(1.07)}
+    .grid{display:grid;gap:16px}.kpis{grid-template-columns:repeat(5,minmax(150px,1fr));margin-bottom:18px}.card{background:linear-gradient(180deg,rgba(22,34,45,.94),rgba(16,25,34,.94));border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}.kpi{padding:18px}.kpi .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.kpi .value{font-size:28px;font-weight:850;margin-top:8px}.kpi .trend{margin-top:8px;font-size:12px;color:var(--muted)}
+    .toolbar{padding:14px;display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:18px}.field{display:grid;gap:6px;min-width:160px}.field label{font-size:12px;color:var(--muted)}.field input,.field select{background:#0d151d;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 10px}.field.grow{flex:1}.split{grid-template-columns:1.4fr .8fr;margin-bottom:18px}.section-head{display:flex;justify-content:space-between;align-items:center;padding:18px 18px 0}.section-head h3{margin:0}.section-head span{color:var(--muted);font-size:12px}.alerts{padding:14px 18px 18px;display:grid;gap:10px}.alert{padding:12px 13px;border-radius:11px;border:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}.dot{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--danger)}.alert.warn .dot{background:var(--warn)}.alert.ok .dot{background:var(--accent2)}.alert b{display:block}.alert small{color:var(--muted)}
+    .chart-wrap{padding:10px 18px 20px}.chart{height:220px;display:flex;align-items:end;gap:14px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px}.bar{flex:1;min-width:20px;background:linear-gradient(180deg,#d1a64a,#6b5526);border-radius:7px 7px 0 0;position:relative}.bar span{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted)}
+    .table-card{overflow:hidden}.table-scroll{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:900px}.table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}.table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:#0f1821;position:sticky;top:0}.badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;border:1px solid var(--border)}.badge.complete{color:#80dbb9;background:rgba(43,163,122,.12)}.badge.open{color:#f0c77b;background:rgba(227,173,79,.11)}.badge.overdue{color:#f08a8a;background:rgba(217,96,96,.12)}
+    .view{display:none}.view.active{display:block}.import-box{padding:22px}.drop{border:1.5px dashed #415465;border-radius:14px;padding:35px;text-align:center;background:#0d151d}.drop input{margin-top:14px}.hint{color:var(--muted);font-size:13px;line-height:1.55}.map-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px}.map-grid .field{min-width:0}.empty{color:var(--muted);padding:28px;text-align:center}
+    @media(max-width:1100px){.app{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}.nav{grid-template-columns:repeat(4,1fr)}.side-note{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}}
+    @media(max-width:650px){.main{padding:18px}.topbar{align-items:flex-start;flex-direction:column}.actions{width:100%;flex-wrap:wrap}.nav{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr}.map-grid{grid-template-columns:1fr}}
+    @media print{.sidebar,.actions,.toolbar,.nav,.no-print{display:none!important}.app{display:block}.main{padding:0}.card{box-shadow:none}.view{display:block!important}body{background:white;color:black}.card{background:white;border:1px solid #ccc}.table th{background:#eee;color:black}.title p,.kpi .label,.kpi .trend,.section-head span,.hint{color:#555}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark">RF</div><div><h1>ReportFlow Pro</h1><small>Business Intelligence</small></div></div>
+    <div class="nav">
+      <button class="active" data-view="dashboard">Dashboard</button>
+      <button data-view="import">Data Import</button>
+      <button data-view="reports">Reports</button>
+      <button data-view="settings">Settings</button>
+    </div>
+    <div class="side-note">Prototype v0.1<br>Built for customizable business reporting, KPI tracking, and automatic exception flagging.</div>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="dashboard">
+      <div class="topbar">
+        <div class="title"><h2>Company Performance</h2><p id="subtitle">Live operational overview from your reporting data.</p></div>
+        <div class="actions"><button class="btn" id="loadSampleBtn">Load Sample Data</button><button class="btn primary" id="printBtn">Generate Report</button></div>
+      </div>
+
+      <div class="grid kpis">
+        <div class="card kpi"><div class="label">Jobs Completed</div><div class="value" id="kpiCompleted">0</div><div class="trend">Current filtered period</div></div>
+        <div class="card kpi"><div class="label">Open Jobs</div><div class="value" id="kpiOpen">0</div><div class="trend">Needs active management</div></div>
+        <div class="card kpi"><div class="label">On-Time Completion</div><div class="value" id="kpiOnTime">0%</div><div class="trend">Completed jobs vs due date</div></div>
+        <div class="card kpi"><div class="label">Revenue</div><div class="value" id="kpiRevenue">$0</div><div class="trend">From filtered records</div></div>
+        <div class="card kpi"><div class="label">Requires Attention</div><div class="value" id="kpiFlags">0</div><div class="trend">Automatic exception flags</div></div>
+      </div>
+
+      <div class="card toolbar">
+        <div class="field grow"><label>Search</label><input id="searchInput" placeholder="Customer, project, employee..." /></div>
+        <div class="field"><label>Status</label><select id="statusFilter"><option value="">All</option><option>Complete</option><option>Open</option><option>Overdue</option></select></div>
+        <div class="field"><label>Customer</label><select id="customerFilter"><option value="">All customers</option></select></div>
+        <div class="field"><label>Start date</label><input type="date" id="startDate" /></div>
+        <div class="field"><label>End date</label><input type="date" id="endDate" /></div>
+        <button class="btn" id="clearFilters">Clear</button>
+      </div>
+
+      <div class="grid split">
+        <div class="card">
+          <div class="section-head"><h3>Revenue Trend</h3><span>By month</span></div>
+          <div class="chart-wrap"><div class="chart" id="revenueChart"></div></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h3>Automatic Flags</h3><span>Priority exceptions</span></div>
+          <div class="alerts" id="alerts"></div>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="section-head"><h3>Operational Records</h3><span id="rowCount">0 records</span></div>
+        <div class="table-scroll"><table class="table"><thead><tr><th>Project</th><th>Customer</th><th>Status</th><th>Owner</th><th>Start</th><th>Due</th><th>Completed</th><th>Revenue</th><th>Hours</th></tr></thead><tbody id="dataBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="view" id="import">
+      <div class="topbar"><div class="title"><h2>Data Import</h2><p>Upload a CSV and map your columns into ReportFlow Pro.</p></div></div>
+      <div class="card import-box">
+        <div class="drop">
+          <h3>Upload CSV</h3>
+          <p class="hint">Expected fields can be mapped below. Excel files can be exported as CSV for this prototype.</p>
+          <input type="file" id="csvFile" accept=".csv,text/csv" />
+        </div>
+        <div id="mappingArea" style="display:none">
+          <h3 style="margin-top:22px">Column Mapping</h3>
+          <p class="hint">ReportFlow will try to auto-detect common column names. Adjust anything it gets wrong, then import.</p>
+          <div class="map-grid" id="mappingGrid"></div>
+          <div style="margin-top:18px"><button class="btn green" id="applyMapping">Import Data</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="reports">
+      <div class="topbar"><div class="title"><h2>Reports</h2><p>Generate management-ready summaries from the current filtered dashboard.</p></div></div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+        <div class="card import-box"><h3>Executive Summary</h3><p class="hint">KPIs, critical flags, revenue, and completion performance.</p><button class="btn primary" onclick="window.print()">Generate PDF / Print</button></div>
+        <div class="card import-box"><h3>Operational Export</h3><p class="hint">Download the currently filtered records as CSV.</p><button class="btn" id="exportCsv">Export Filtered CSV</button></div>
+        <div class="card import-box"><h3>Exception Report</h3><p class="hint">Show overdue projects and records that exceed configured thresholds.</p><button class="btn" id="showExceptions">View Exceptions</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="settings">
+      <div class="topbar"><div class="title"><h2>Settings</h2><p>Configure the rules ReportFlow uses to decide what requires attention.</p></div></div>
+      <div class="card import-box">
+        <div class="map-grid">
+          <div class="field"><label>High-hours warning threshold</label><input type="number" id="hoursThreshold" value="80" min="1" /></div>
+          <div class="field"><label>Low revenue warning threshold</label><input type="number" id="revenueThreshold" value="2500" min="0" /></div>
+        </div>
+        <p class="hint" style="margin-top:16px">Changes apply immediately to the automatic flags on the dashboard.</p>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+const sampleData = [
+ {project:'RF-2401',customer:'Bayou Industrial',status:'Complete',owner:'M. Landry',start:'2026-04-03',due:'2026-04-10',completed:'2026-04-09',revenue:12800,hours:61},
+ {project:'RF-2402',customer:'Pelican Manufacturing',status:'Complete',owner:'J. Carter',start:'2026-04-11',due:'2026-04-18',completed:'2026-04-21',revenue:9400,hours:78},
+ {project:'RF-2403',customer:'Gulf Process',status:'Open',owner:'T. Benoit',start:'2026-05-02',due:'2026-09-12',completed:'',revenue:15200,hours:43},
+ {project:'RF-2404',customer:'Bayou Industrial',status:'Overdue',owner:'M. Landry',start:'2026-05-17',due:'2026-08-24',completed:'',revenue:6800,hours:92},
+ {project:'RF-2405',customer:'Crescent Logistics',status:'Complete',owner:'A. Smith',start:'2026-06-01',due:'2026-06-10',completed:'2026-06-10',revenue:7300,hours:39},
+ {project:'RF-2406',customer:'Pelican Manufacturing',status:'Complete',owner:'J. Carter',start:'2026-06-14',due:'2026-06-25',completed:'2026-06-23',revenue:11350,hours:57},
+ {project:'RF-2407',customer:'Gulf Process',status:'Open',owner:'T. Benoit',start:'2026-07-06',due:'2026-09-18',completed:'',revenue:4200,hours:22},
+ {project:'RF-2408',customer:'Crescent Logistics',status:'Complete',owner:'A. Smith',start:'2026-07-12',due:'2026-07-21',completed:'2026-07-19',revenue:3900,hours:35},
+ {project:'RF-2409',customer:'Bayou Industrial',status:'Complete',owner:'M. Landry',start:'2026-08-02',due:'2026-08-12',completed:'2026-08-11',revenue:16400,hours:68},
+ {project:'RF-2410',customer:'Pelican Manufacturing',status:'Overdue',owner:'J. Carter',start:'2026-08-10',due:'2026-08-27',completed:'',revenue:2100,hours:87},
+ {project:'RF-2411',customer:'Crescent Logistics',status:'Open',owner:'A. Smith',start:'2026-08-18',due:'2026-09-08',completed:'',revenue:5600,hours:31},
+ {project:'RF-2412',customer:'Gulf Process',status:'Complete',owner:'T. Benoit',start:'2026-08-20',due:'2026-08-29',completed:'2026-08-28',revenue:8900,hours:46}
+];
+let data=[...sampleData], filtered=[...sampleData], rawCsv=[], csvHeaders=[];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const currency=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n)||0);
+const parseDate=v=>v?new Date(v+'T00:00:00'):null;
+
+function normalizeStatus(r){
+  if(r.status) return String(r.status).trim();
+  const due=parseDate(r.due), completed=parseDate(r.completed), today=new Date(); today.setHours(0,0,0,0);
+  if(completed) return 'Complete';
+  if(due && due<today) return 'Overdue';
+  return 'Open';
+}
+function refreshCustomers(){
+ const sel=$('#customerFilter'), current=sel.value; sel.innerHTML='<option value="">All customers</option>';
+ [...new Set(data.map(r=>r.customer).filter(Boolean))].sort().forEach(c=>{const o=document.createElement('option');o.textContent=c;o.value=c;sel.appendChild(o)}); sel.value=current;
+}
+function applyFilters(){
+ const q=$('#searchInput').value.toLowerCase().trim(), st=$('#statusFilter').value, cust=$('#customerFilter').value, sd=parseDate($('#startDate').value), ed=parseDate($('#endDate').value);
+ filtered=data.filter(r=>{
+   r.status=normalizeStatus(r);
+   const hay=[r.project,r.customer,r.owner,r.status].join(' ').toLowerCase();
+   const start=parseDate(r.start);
+   return (!q||hay.includes(q))&&(!st||r.status===st)&&(!cust||r.customer===cust)&&(!sd||!start||start>=sd)&&(!ed||!start||start<=ed);
+ }); render();
+}
+function render(){
+ const completed=filtered.filter(r=>r.status==='Complete'), open=filtered.filter(r=>r.status==='Open'), revenue=filtered.reduce((s,r)=>s+(+r.revenue||0),0);
+ const ontime=completed.length?Math.round(completed.filter(r=>r.completed&&r.due&&parseDate(r.completed)<=parseDate(r.due)).length/completed.length*100):0;
+ const flags=getFlags(filtered);
+ $('#kpiCompleted').textContent=completed.length; $('#kpiOpen').textContent=open.length; $('#kpiOnTime').textContent=ontime+'%'; $('#kpiRevenue').textContent=currency(revenue); $('#kpiFlags').textContent=flags.filter(f=>f.level!=='ok').length;
+ $('#rowCount').textContent=filtered.length+' record'+(filtered.length===1?'':'s');
+ $('#dataBody').innerHTML=filtered.length?filtered.map(r=>`<tr><td><b>${esc(r.project)}</b></td><td>${esc(r.customer)}</td><td><span class="badge ${String(r.status).toLowerCase()}">${esc(r.status)}</span></td><td>${esc(r.owner)}</td><td>${esc(r.start)}</td><td>${esc(r.due)}</td><td>${esc(r.completed||'—')}</td><td>${currency(r.revenue)}</td><td>${esc(r.hours)}</td></tr>`).join(''):'<tr><td colspan="9" class="empty">No records match the current filters.</td></tr>';
+ renderAlerts(flags); renderChart();
+}
+function getFlags(rows){
+ const h=+$('#hoursThreshold').value||80, rev=+$('#revenueThreshold').value||2500, flags=[];
+ rows.forEach(r=>{
+   if(r.status==='Overdue') flags.push({level:'danger',title:`${r.project} is overdue`,detail:`${r.customer} • Due ${r.due}`});
+   if((+r.hours||0)>h) flags.push({level:'warn',title:`${r.project} exceeded ${h} hours`,detail:`Current hours: ${r.hours}`});
+   if((+r.revenue||0)>0 && (+r.revenue||0)<rev) flags.push({level:'warn',title:`${r.project} is below revenue threshold`,detail:`Revenue: ${currency(r.revenue)}`});
+ });
+ if(!flags.length) flags.push({level:'ok',title:'No critical exceptions',detail:'Current filtered data is within configured thresholds.'});
+ return flags.slice(0,8);
+}
+function renderAlerts(flags){$('#alerts').innerHTML=flags.map(f=>`<div class="alert ${f.level==='warn'?'warn':f.level==='ok'?'ok':''}"><div class="dot"></div><div><b>${esc(f.title)}</b><small>${esc(f.detail)}</small></div></div>`).join('')}
+function renderChart(){
+ const sums={}; filtered.forEach(r=>{if(!r.start)return; const d=parseDate(r.start); if(!d)return; const key=d.toLocaleString('en-US',{month:'short'}); sums[key]=(sums[key]||0)+(+r.revenue||0)});
+ const entries=Object.entries(sums), max=Math.max(1,...entries.map(x=>x[1])); $('#revenueChart').innerHTML=entries.length?entries.map(([m,v])=>`<div class="bar" title="${m}: ${currency(v)}" style="height:${Math.max(8,v/max*100)}%"><span>${m}</span></div>`).join(''):'<div class="empty" style="width:100%">No revenue data</div>';
+}
+function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+
+$$('.nav button').forEach(b=>b.addEventListener('click',()=>{$$('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active')}));
+['searchInput','statusFilter','customerFilter','startDate','endDate'].forEach(id=>$('#'+id).addEventListener('input',applyFilters));
+$('#clearFilters').onclick=()=>{$('#searchInput').value='';$('#statusFilter').value='';$('#customerFilter').value='';$('#startDate').value='';$('#endDate').value='';applyFilters()};
+$('#loadSampleBtn').onclick=()=>{data=[...sampleData];refreshCustomers();applyFilters();$('#subtitle').textContent='Sample company data loaded. Upload your own CSV from Data Import.'};
+$('#printBtn').onclick=()=>window.print();
+['hoursThreshold','revenueThreshold'].forEach(id=>$('#'+id).addEventListener('input',render));
+
+function parseCSV(text){
+ const rows=[]; let row=[], val='', quote=false;
+ for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1]; if(c==='"'&&quote&&n==='"'){val+='"';i++;continue} if(c==='"'){quote=!quote;continue} if(c===','&&!quote){row.push(val.trim());val='';continue} if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&n==='\n')i++;row.push(val.trim());val='';if(row.some(x=>x!==''))rows.push(row);row=[];continue} val+=c}
+ row.push(val.trim()); if(row.some(x=>x!==''))rows.push(row); return rows;
+}
+$('#csvFile').addEventListener('change',async e=>{const f=e.target.files[0]; if(!f)return; const txt=await f.text(); const rows=parseCSV(txt); if(rows.length<2){alert('Could not find usable CSV rows.');return} csvHeaders=rows[0]; rawCsv=rows.slice(1); buildMapping();});
+const fields=[['project','Project / Job ID'],['customer','Customer'],['status','Status'],['owner','Owner / Employee'],['start','Start Date'],['due','Due Date'],['completed','Completed Date'],['revenue','Revenue'],['hours','Hours']];
+function autoMatch(key){const aliases={project:['project','project id','job','job id','job number'],customer:['customer','client','company'],status:['status'],owner:['owner','employee','technician','pm','project manager'],start:['start','start date','date'],due:['due','due date','deadline'],completed:['completed','completed date','completion date'],revenue:['revenue','amount','sales','value'],hours:['hours','labor hours','hrs']}; const low=csvHeaders.map(h=>h.toLowerCase().trim()); for(const a of aliases[key]){const i=low.indexOf(a);if(i>=0)return csvHeaders[i]} return ''}
+function buildMapping(){
+ $('#mappingArea').style.display='block'; $('#mappingGrid').innerHTML=fields.map(([k,label])=>`<div class="field"><label>${label}</label><select data-map="${k}"><option value="">— Not mapped —</option>${csvHeaders.map(h=>`<option ${h===autoMatch(k)?'selected':''}>${esc(h)}</option>`).join('')}</select></div>`).join('');
+}
+$('#applyMapping').onclick=()=>{
+ const map={}; $$('[data-map]').forEach(s=>map[s.dataset.map]=s.value); const idx={}; csvHeaders.forEach((h,i)=>idx[h]=i);
+ data=rawCsv.map(r=>{const o={}; fields.forEach(([k])=>{const h=map[k];o[k]=h?r[idx[h]]:''});o.revenue=Number(String(o.revenue).replace(/[$,]/g,''))||0;o.hours=Number(String(o.hours).replace(/,/g,''))||0;o.status=normalizeStatus(o);return o}).filter(r=>r.project||r.customer);
+ refreshCustomers(); applyFilters(); $$('.nav button').find(b=>b.dataset.view==='dashboard').click(); $('#subtitle').textContent='Imported CSV data is now active.';
+};
+$('#exportCsv').onclick=()=>{
+ const headers=['project','customer','status','owner','start','due','completed','revenue','hours']; const body=[headers.join(','),...filtered.map(r=>headers.map(h=>'"'+String(r[h]??'').replace(/"/g,'""')+'"').join(','))].join('\n'); const blob=new Blob([body],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='reportflow_filtered.csv';a.click();URL.revokeObjectURL(url);
+};
+$('#showExceptions').onclick=()=>{const exceptions=filtered.filter(r=>r.status==='Overdue'||(+r.hours||0)>(+$('#hoursThreshold').value||80)||((+r.revenue||0)>0&&(+r.revenue||0)<(+$('#revenueThreshold').value||2500))); filtered=exceptions; render(); $$('.nav button').find(b=>b.dataset.view==='dashboard').click();};
+refreshCustomers();render();
+</script>
+</body>
+</html>
