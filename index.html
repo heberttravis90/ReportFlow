@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReportFlow Pro v6</title>
+<title>ReportFlow Pro v7</title>
 <style>
 :root{--bg:#0b1015;--panel:#121920;--panel2:#18212a;--panel3:#0e151b;--text:#f3f6f8;--muted:#93a2ad;--accent:#d1a64a;--accent2:#2ba37a;--danger:#d96060;--warn:#e3ad4f;--border:#26323c;--shadow:0 10px 28px rgba(0,0,0,.18);--radius:12px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.4}
@@ -504,19 +504,66 @@ function resetStackImport(){stackWorkbook=[];stackDraft=null;$('#stackDataFile')
 $('#cancelStackImport').onclick=resetStackImport;
 $('#addStackResult').onclick=()=>{if(!stackDraft)return;const labels=collectEmissionRunLabels(stackDraft.results);stackDraft.results.push({sheet:'Manual',category:'Emissions',pollutant:'',method:'',runs:labels.map(label=>({label,value:''})),average:'',unit:'',standard:'',status:'REVIEW',statusSource:'review'});renderStackReview()};
 $('#recalcStackResults').onclick=()=>{if(!stackDraft)return;stackDraft.results.forEach(r=>{r.runs=resultRuns(r);if(!r.average)r.average=averageValues(r.runs.map(x=>x.value));calcStackStatus(r,true)});renderStackReview();toast('Emissions results recalculated where a numeric maximum limit is available')};
+function safeSheetRows(ws){
+  if(!ws)return [];
+  let range;
+  try{range=XLSX.utils.decode_range(ws['!ref']||'A1:A1')}catch(_){range={s:{r:0,c:0},e:{r:0,c:0}}}
+  // Field/RATA templates occasionally have formatting copied to tens of thousands of rows.
+  // Clamp the scan area so a phone does not try to materialize an entire Excel worksheet.
+  range.s.r=Math.max(0,range.s.r||0);range.s.c=Math.max(0,range.s.c||0);
+  range.e.r=Math.min(range.e.r||0,799); // first 800 rows per worksheet
+  range.e.c=Math.min(range.e.c||0,79);  // first 80 columns (through CB)
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false,range});
+  return rows.map(row=>{
+    const a=Array.isArray(row)?row.slice(0,80):[];
+    let last=a.length-1;while(last>=0&&!cleanCell(a[last]))last--;
+    return a.slice(0,last+1);
+  }).filter(row=>row.some(c=>cleanCell(c)));
+}
+async function readStackWorkbookSafely(file){
+  const buffer=await file.arrayBuffer();
+  // Avoid retaining formula/style metadata we do not need for preliminary reporting.
+  const wb=XLSX.read(buffer,{type:'array',cellDates:false,cellStyles:false,cellHTML:false,cellNF:false,cellFormula:false});
+  const names=wb.SheetNames||[];
+  const ordered=[...names].sort((a,b)=>{
+    const score=n=>/emissions?|results? summary/i.test(n)?0:/rata|cems|relative accuracy|nox|so2|co|o2|voc|thc|h2s|nh3|hcl|hf|pm|particulate|mercury|formaldehyde/i.test(n)?1:2;
+    return score(a)-score(b);
+  });
+  const parsed=[];
+  for(let i=0;i<ordered.length;i++){
+    const name=ordered[i];
+    $('#stackScanStatus').textContent=`Reading worksheet ${i+1} of ${ordered.length}: ${name}...`;
+    // Give mobile browsers a chance to repaint between worksheets.
+    if(i%2===0)await new Promise(r=>setTimeout(r,0));
+    const rows=safeSheetRows(wb.Sheets[name]);
+    if(rows.length)parsed.push({name,rows});
+  }
+  return {parsed,total:names.length};
+}
 $('#stackDataFile').addEventListener('change',async e=>{
   if(!roleCan('data')){e.target.value='';return toast('Data write access required')}
   const f=e.target.files[0];if(!f)return;
   try{
-    $('#stackScanStatus').textContent='Scanning Emissions and pollutant worksheets...';
-    if(!(await ensureXlsx()))throw new Error('Excel reader could not load.');
-    const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
-    stackWorkbook=wb.SheetNames.map(name=>({name,rows:XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:'',raw:false})}));
+    $('#stackReview').style.display='none';
+    $('#stackScanStatus').textContent='Opening workbook...';
+    if(!(await ensureXlsx()))throw new Error('Excel reader could not load. Check your internet connection and try again.');
+    // Let the "Opening workbook" message paint before the heavier Excel work begins.
+    await new Promise(r=>setTimeout(r,40));
+    const loaded=await readStackWorkbookSafely(f);
+    stackWorkbook=loaded.parsed;
+    if(!stackWorkbook.length)throw new Error('No readable worksheet data was found in this workbook.');
+    $('#stackScanStatus').textContent='Analyzing Emissions and RM/CEMS results...';
+    await new Promise(r=>setTimeout(r,20));
     stackDraft=buildStackDraft(f.name);
     const emissions=stackDraft.results.length,cems=stackDraft.cemsComparisons.length,runs=stackDraft.runCount;
-    $('#stackScanStatus').textContent=`Scanned ${stackWorkbook.length} worksheet${stackWorkbook.length===1?'':'s'} • ${emissions} emissions result${emissions===1?'':'s'} • ${cems} RM/CEMS comparison${cems===1?'':'s'} • up to ${runs} run${runs===1?'':'s'} detected. Review before creating the preliminary report.`;
-    renderStackReview()
-  }catch(err){$('#stackScanStatus').textContent='';alert(err.message)}
+    $('#stackScanStatus').textContent=`Scanned ${stackWorkbook.length} populated worksheet${stackWorkbook.length===1?'':'s'} (${loaded.total} total) • ${emissions} emissions result${emissions===1?'':'s'} • ${cems} RM/CEMS comparison${cems===1?'':'s'} • up to ${runs} run${runs===1?'':'s'} detected. Review before creating the preliminary report.`;
+    renderStackReview();
+    $('#stackReview').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    console.error('Stack workbook import failed',err);
+    $('#stackReview').style.display='none';
+    $('#stackScanStatus').innerHTML=`<span style="color:#ffb4b4"><b>Workbook could not be scanned.</b> ${esc(err?.message||'Unknown import error')}</span>`;
+  }
 });
 function preliminaryOverallStatus(t){
   const statuses=[...(t.results||[]).map(r=>r.status),...(t.cemsComparisons||[]).map(c=>c.status)];
@@ -609,7 +656,7 @@ $('#addKpiBtn').onclick=kpiModal;
 function renderCustomKpiSettings(){$('#customKpiList').innerHTML=state.customKpis.length?state.customKpis.map(k=>`<div class="item"><div class="maincopy"><b>${esc(k.name)}</b><div class="meta">${esc(k.operation)} ${esc(k.field)}${k.status?' • '+esc(k.status):''} • ${esc(k.format)}</div></div><div class="actions"><button class="btn mini danger" data-del-kpi="${k.id}">Delete</button></div></div>`).join(''):'<div class="empty">No custom KPIs yet.</div>';$$('[data-del-kpi]').forEach(b=>b.onclick=()=>{const k=state.customKpis.find(x=>x.id===b.dataset.delKpi);state.customKpis=state.customKpis.filter(x=>x.id!==b.dataset.delKpi);saveState();audit('Custom KPI deleted',k?.name||'');renderCustomKpiSettings();renderCustomKpis()})}
 
 $('#newReportBtn').dataset.writeReport='';$('#newTemplateBtn').dataset.writeReport='';$('#newScheduleBtn').dataset.writeReport='';
-function init(){document.documentElement.style.setProperty('--accent',state.company.accent||'#d1a64a');const fd=$('#filterDetails');if(fd&&window.innerWidth<=760)fd.open=false;refreshCustomers();applyFilters();renderReports();renderStackTests();renderDatasets();renderUsers();renderAudit();renderSchedules();renderSettings();enforceRole();setImportMode('general');if(!state.audit.length)audit('ReportFlow Pro v6 initialized','Local demo workspace ready')}
+function init(){document.documentElement.style.setProperty('--accent',state.company.accent||'#d1a64a');const fd=$('#filterDetails');if(fd&&window.innerWidth<=760)fd.open=false;refreshCustomers();applyFilters();renderReports();renderStackTests();renderDatasets();renderUsers();renderAudit();renderSchedules();renderSettings();enforceRole();setImportMode('general');if(!state.audit.length)audit('ReportFlow Pro v7 initialized','Local demo workspace ready')}
 init();
 </script>
 </body>
