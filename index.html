@@ -127,9 +127,9 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
     </div>
 
     <div id="stackImportPanel" style="display:none">
-      <div class="callout"><b>Preliminary Stack Test Report:</b> Upload the field calculation workbook. ReportFlow prioritizes the <b>Emissions</b> worksheet for test results and scans pollutant worksheets for <b>RM vs CEMS</b> comparison data. It uses the number of runs it actually finds instead of assuming three runs. The original workbook is never changed.</div>
+      <div class="callout"><b>Preliminary Stack Test Report:</b> Upload the field calculation workbook. ReportFlow respects the workbook's active/visible setup. For a recognized <b>Part 60 RATA</b>, it uses only the active Part 60 performance-summary worksheets and excludes hidden Part 75, helper, calculation, ERT, and unused parameter tabs. For other stack tests, it prioritizes active Emissions and RM/CEMS result sheets. The original workbook is never changed.</div>
       <div class="card import-box">
-        <div class="drop"><h3>Upload Stack Test Excel Workbook</h3><p class="hint">ReportFlow scans all worksheets, prioritizing Emissions and pollutant/RATA tabs, then builds a client-facing preliminary results package.</p><input type="file" id="stackDataFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" /></div>
+        <div class="drop"><h3>Upload Stack Test Excel Workbook</h3><p class="hint">ReportFlow scans the active report-facing worksheets, recognizes Part 60 RATA summary tabs when present, and builds a focused client-facing preliminary results package.</p><input type="file" id="stackDataFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" /></div>
         <div id="stackScanStatus" class="hint" style="margin-top:10px"></div>
         <div id="stackReview" class="stack-review" style="display:none">
           <h3>Review Preliminary Results</h3>
@@ -144,8 +144,8 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
             <div class="field" style="grid-column:span 2"><label>Client-Facing Preliminary Notes</label><input id="stackNotes" placeholder="Optional field conditions, operating notes, or context..." /></div>
           </div>
           <div style="margin-top:12px"><b style="font-size:12px">Detected methods & worksheets</b><div id="stackDetectedInfo" class="stack-sheet-pills"></div></div>
-          <div class="card table-card" style="margin-top:12px"><div class="section-head"><h3>Emissions Results</h3><span id="stackResultCount">0 results</span></div><div class="table-scroll"><table class="table stack-review-table"><thead id="stackResultHead"></thead><tbody id="stackResultBody"></tbody></table></div></div>
-          <div class="card table-card" style="margin-top:12px"><div class="section-head"><h3>RM vs CEMS Comparisons</h3><span id="stackCemsCount">0 comparisons</span></div><div class="table-scroll"><table class="table stack-compare-table"><thead><tr><th>Pollutant</th><th>Worksheet</th><th>Runs</th><th>RM Avg</th><th>CEMS Avg</th><th>Relative Accuracy</th><th>RA Limit</th><th>Bias</th><th>Status</th></tr></thead><tbody id="stackCemsBody"></tbody></table></div></div>
+          <div class="card table-card" id="stackEmissionsCard" style="margin-top:12px"><div class="section-head"><h3>Emissions Results</h3><span id="stackResultCount">0 results</span></div><div class="table-scroll"><table class="table stack-review-table"><thead id="stackResultHead"></thead><tbody id="stackResultBody"></tbody></table></div></div>
+          <div class="card table-card" id="stackCemsCard" style="margin-top:12px"><div class="section-head"><h3 id="stackCemsHeading">RM vs CEMS Comparisons</h3><span id="stackCemsCount">0 comparisons</span></div><div class="table-scroll"><table class="table stack-compare-table"><thead id="stackCemsHead"><tr><th>Pollutant</th><th>Worksheet</th><th>Runs</th><th>RM Avg</th><th>CEMS Avg</th><th>Relative Accuracy</th><th>RA Limit</th><th>Bias</th><th>Status</th></tr></thead><tbody id="stackCemsBody"></tbody></table></div></div>
           <div class="btnrow" style="margin-top:12px"><button class="btn" id="addStackResult">+ Add Emissions Result</button><button class="btn" id="recalcStackResults">Recalculate Emissions</button><button class="btn primary" id="previewStackDraft">Preview PRELIMINARY</button><button class="btn green" id="saveStackTest">Save Preliminary Report</button><button class="btn" id="cancelStackImport">Reset</button></div>
           <p class="hint">ReportFlow uses explicit workbook PASS/FAIL where available. It only auto-calculates a status when the comparison is unambiguous; otherwise it marks the item REVIEW. Final regulatory determinations remain subject to QA/QC and the final report.</p>
         </div>
@@ -456,7 +456,72 @@ function detectStackResults(){
   }
   return out.slice(0,100);
 }
+function findRowLabel(sh,test){
+  for(const row of sh.rows){for(let ci=0;ci<row.length;ci++){const t=normCell(row[ci]);if(test(t,ci,row))return {row,ci}}}
+  return null;
+}
+function activePart60RataSheets(){
+  return stackWorkbook.filter(sh=>!sh.hidden&&/\(p60\)|part\s*60/i.test(sh.name)&&!/^\(p60\)\s*-?\s*$/i.test(sh.name)).filter(sh=>{
+    const txt=sh.rows.slice(0,40).flat().map(normCell).join(' | ');
+    return /reference method/.test(txt)&&/\bcems\b/.test(txt)&&/relative accuracy/.test(txt);
+  });
+}
+function detectPart60RataComparisons(){
+  const out=[];
+  for(const sh of activePart60RataSheets()){
+    const rows=sh.rows;
+    const headerHit=findRowLabel(sh,t=>/^run\s*(no\.?|number)?$/.test(t)||t==='run no.');
+    if(!headerHit)continue;
+    const header=headerHit.row,h=header.map(normCell);
+    const findCol=tests=>h.findIndex(x=>tests.some(re=>re.test(x)));
+    const runIdx=headerHit.ci,dateIdx=findCol([/^date$/]),rmIdx=findCol([/^reference method$/]),cemsIdx=findCol([/^cems$/]),diffIdx=findCol([/^average$/,/^difference$/]);
+    if(rmIdx<0||cemsIdx<0)continue;
+    const headerPos=rows.indexOf(header);
+    let startIdx=-1,endIdx=-1,unit='';
+    for(let k=headerPos+1;k<Math.min(rows.length,headerPos+5);k++){
+      const rr=rows[k],hh=rr.map(normCell);
+      if(startIdx<0)startIdx=hh.findIndex(x=>x==='start'||x==='start time');
+      if(endIdx<0)endIdx=hh.findIndex(x=>x==='end'||x==='stop'||x==='end time'||x==='stop time');
+      const candidate=cleanCell(rr[rmIdx]);if(candidate&&/(%|ppm|lb\/?mmbtu|lb\/?hr|dscf|scf)/i.test(candidate))unit=candidate;
+    }
+    const runs=[];
+    for(let k=headerPos+1;k<Math.min(rows.length,headerPos+30);k++){
+      const rr=rows[k],rn=runNumber(rr[runIdx]),rm=numVal(rr[rmIdx]),cm=numVal(rr[cemsIdx]);
+      if(rn===null||rm===null||cm===null)continue;
+      if(rn<1||rn>99)continue;
+      const diff=diffIdx>=0&&numVal(rr[diffIdx])!==null?cleanCell(rr[diffIdx]):String(Math.round((rm-cm)*1000000)/1000000);
+      runs.push({label:'Run '+rn,date:dateIdx>=0?cleanCell(rr[dateIdx]):'',start:startIdx>=0?cleanCell(rr[startIdx]):'',end:endIdx>=0?cleanCell(rr[endIdx]):'',rm:cleanCell(rr[rmIdx]),cems:cleanCell(rr[cemsIdx]),diff,status:''});
+    }
+    if(runs.length<3)continue;
+    const rowByFirst=re=>rows.find(r=>re.test(normCell(r[0])))||null;
+    const avgRow=rowByFirst(/^average$/),sdRow=rowByFirst(/^standard deviation/),stdRow=rowByFirst(/^applicable source standard/),ccRow=rowByFirst(/^confidence coefficient/),psRow=rowByFirst(/^performance specification method/);
+    const raRows=rows.filter(r=>/^relative accuracy \(ra\)$/.test(normCell(r[0])));
+    const reqRows=rows.filter(r=>/^performance required/.test(normCell(r[0])));
+    const summaryBasisIdx=avgRow?avgRow.map(normCell).findIndex(x=>x==='rm or as'):-1;
+    const basis=summaryBasisIdx>=0?cleanCell(avgRow[summaryBasisIdx+1]):'';
+    const avgRM=avgRow?cleanCell(avgRow[rmIdx]):averageValues(runs.map(x=>x.rm));
+    const avgCems=avgRow?cleanCell(avgRow[cemsIdx]):averageValues(runs.map(x=>x.cems));
+    const meanDiff=avgRow&&diffIdx>=0?cleanCell(avgRow[diffIdx]):averageValues(runs.map(x=>x.diff));
+    const sd=sdRow&&diffIdx>=0?cleanCell(sdRow[diffIdx]):'';
+    const cc=ccRow&&diffIdx>=0?cleanCell(ccRow[diffIdx]):'';
+    const standard=stdRow&&diffIdx>=0?cleanCell(stdRow[diffIdx]):'';
+    const ra=raRows.length&&diffIdx>=0?cleanCell(raRows[0][diffIdx]):'';
+    const criterion=reqRows.length&&diffIdx>=0?cleanCell(reqRows[0][diffIdx]):'';
+    const altValue=raRows.length>1&&diffIdx>=0?cleanCell(raRows[1][diffIdx]):'';
+    const altCriterion=reqRows.length>1&&diffIdx>=0?cleanCell(reqRows[1][diffIdx]):'';
+    const method=psRow&&diffIdx>=0?cleanCell(psRow[diffIdx]):(methodFromSheet(sh)||'');
+    const pollutant=pollutantFromText(sh.name)||pollutantFromText(cleanCell(header[rmIdx]))||cleanCell(sh.name).split('(')[0].trim();
+    const raNum=numVal(ra),limitNum=numVal(criterion),altNum=numVal(altValue),altLimit=numVal(altCriterion);
+    let status='REVIEW',statusSource='part60-workbook';
+    if(raNum!==null&&limitNum!==null)status=raNum<=limitNum?'PASS':'FAIL';
+    if(status==='FAIL'&&/^ps\s*3$/i.test(method)&&altNum!==null&&altLimit!==null&&Math.abs(altNum)<=altLimit)status='PASS';
+    const basisLabel=basis==='AS'?(standard?`Applicable Source Standard (${standard} ${unit})`:'Applicable Source Standard'):'Mean Reference Method';
+    out.push({sheet:sh.name,pollutant,method,runs,avgRM,avgCems,meanDiff,sd,cc,ra,raLimit:criterion,criterion,basis,basisLabel,standard,alternateValue:altValue,alternateCriterion:altCriterion,unit,status,statusSource,regulatoryProfile:'Part 60'});
+  }
+  return out;
+}
 function detectCemsComparisons(){
+  const p60=detectPart60RataComparisons();if(p60.length)return p60;
   const out=[],seen=new Set();
   for(const sh of stackWorkbook){
     const rows=sh.rows,pollutant=detectSheetPollutant(sh),method=methodFromSheet(sh);
@@ -502,6 +567,20 @@ function detectCemsComparisons(){
   return out.slice(0,30);
 }
 function buildStackDraft(fileName){
+  const p60Comparisons=detectPart60RataComparisons();
+  if(p60Comparisons.length){
+    const location=findWorkbookValue(['location','facility','plant','site']);
+    let client=findWorkbookValue(['client','customer','company']),facility=location||findWorkbookValue(['facility','plant','site']);
+    if(!client&&location){const m=location.match(/^(.*?)\s+-\s+(.+)$/);if(m){client=m[1].trim();facility=m[2].trim()}}
+    const source=findWorkbookValue(['source','unit','emission unit','stack']);
+    const project=findWorkbookValue(['project no.','project no','project number','project #','job number','job #','project','job']);
+    const testDate=p60Comparisons.flatMap(c=>c.runs||[]).map(r=>r.date).find(Boolean)||findWorkbookValue(['test date','date of test','testing date']);
+    const methods=[...new Set(p60Comparisons.map(c=>cleanCell(c.method)).filter(Boolean))];
+    const runCount=Math.max(0,...p60Comparisons.map(c=>c.runs?.length||0));
+    const shortSource=source?source.replace(/\s*-\s*[A-Z]{2,}-[A-Z0-9-]+.*$/,'').trim():'';
+    const base=[project,shortSource].filter(Boolean).join(' • ')||fileName.replace(/\.[^.]+$/,'');
+    return {client,facility,source,project,testDate,name:`${base} • Part 60 RATA Preliminary Results`,preparedBy:state.role||'',notes:'',methods,results:[],cemsComparisons:p60Comparisons,runCount,sheets:p60Comparisons.map(x=>x.sheet),sourceFile:fileName,reportType:'PRELIMINARY',reportKind:'PART60_RATA',profile:'Part 60 RATA',regulatoryBasis:'40 CFR Part 60 Appendix B',reportScope:'Only active Part 60 RATA performance-summary worksheets are included; hidden Part 75, helper, calculation, ERT, and unused parameter sheets are excluded.'};
+  }
   const methods=detectMethods(),results=detectStackResults(),cemsComparisons=detectCemsComparisons();
   const client=findWorkbookValue(['client','customer','company']);
   const facility=findWorkbookValue(['facility','plant','site']);
@@ -520,16 +599,21 @@ function syncStackDraftFromForm(){
 }
 function renderStackReview(){
   if(!stackDraft)return;
+  const isP60=stackDraft.reportKind==='PART60_RATA';
   $('#stackReview').style.display='block';$('#stackClient').value=stackDraft.client||'';$('#stackFacility').value=stackDraft.facility||'';$('#stackSource').value=stackDraft.source||'';$('#stackProject').value=stackDraft.project||'';$('#stackDate').value=stackDraft.testDate||'';$('#stackName').value=stackDraft.name||'';$('#stackPreparedBy').value=stackDraft.preparedBy||state.role||'';$('#stackNotes').value=stackDraft.notes||'';
-  const info=[...stackDraft.methods.map(x=>'Method: '+x),...stackDraft.sheets.map(x=>'Sheet: '+x)];$('#stackDetectedInfo').innerHTML=info.length?info.map(x=>`<span class="pill">${esc(x)}</span>`).join(''):'<span class="hint">No methods or worksheet names detected.</span>';
+  const info=[...(stackDraft.profile?[`Profile: ${stackDraft.profile}`]:[]),...stackDraft.methods.map(x=>(isP60?'Performance Specification: ':'Method: ')+x),...stackDraft.sheets.map(x=>'Included Sheet: '+x)];$('#stackDetectedInfo').innerHTML=info.length?info.map(x=>`<span class="pill">${esc(x)}</span>`).join(''):'<span class="hint">No methods or worksheet names detected.</span>';
+  $('#stackEmissionsCard').style.display=isP60?'none':'';$('#addStackResult').style.display=isP60?'none':'';$('#recalcStackResults').style.display=isP60?'none':'';
   const runLabels=collectEmissionRunLabels(stackDraft.results);
   $('#stackResultCount').textContent=stackDraft.results.length+' result'+(stackDraft.results.length===1?'':'s')+(runLabels.length?` • ${runLabels.length} run${runLabels.length===1?'':'s'} detected`:'');
   $('#stackResultHead').innerHTML=`<tr><th>Pollutant / Parameter</th><th>Worksheet</th><th>Method</th>${runLabels.map(x=>`<th>${esc(x)}</th>`).join('')}<th>Average</th><th>Units</th><th>Standard / Limit</th><th>Status</th><th></th></tr>`;
   $('#stackResultBody').innerHTML=stackDraft.results.length?stackDraft.results.map((r,i)=>`<tr><td><input class="wideinput" data-stack-row="${i}" data-stack-field="pollutant" value="${esc(r.pollutant)}"></td><td>${esc(r.sheet||'—')}</td><td><input class="wideinput" data-stack-row="${i}" data-stack-field="method" value="${esc(r.method)}"></td>${runLabels.map((label,ri)=>{const hit=resultRuns(r).find(x=>x.label===label);return `<td><input data-stack-row="${i}" data-stack-run-index="${ri}" value="${esc(hit?.value||'')}"></td>`}).join('')}<td><input data-stack-row="${i}" data-stack-field="average" value="${esc(r.average)}"></td><td><input data-stack-row="${i}" data-stack-field="unit" value="${esc(r.unit)}"></td><td><input data-stack-row="${i}" data-stack-field="standard" value="${esc(r.standard)}"></td><td><select data-stack-row="${i}" data-stack-field="status"><option ${r.status==='PASS'?'selected':''}>PASS</option><option ${r.status==='FAIL'?'selected':''}>FAIL</option><option ${r.status==='REVIEW'?'selected':''}>REVIEW</option></select><div class="stack-source">${r.statusSource==='calculated'?'auto ≤ limit':r.statusSource==='workbook'?'from workbook':'review'}</div></td><td><button class="btn mini danger" data-remove-stack="${i}">×</button></td></tr>`).join(''):`<tr><td colspan="${9+runLabels.length}" class="empty">No emissions result table was confidently detected. Add a result manually or use a real workbook to refine the scanner.</td></tr>`;
   $$('[data-stack-row]').forEach(el=>el.oninput=()=>{const r=stackDraft.results[+el.dataset.stackRow];if(!r)return;if(el.dataset.stackRunIndex!==undefined){const label=runLabels[+el.dataset.stackRunIndex];ensureResultRun(r,label).value=el.value}else r[el.dataset.stackField]=el.value});
   $$('[data-remove-stack]').forEach(b=>b.onclick=()=>{stackDraft.results.splice(+b.dataset.removeStack,1);renderStackReview()});
-  const comps=stackDraft.cemsComparisons||[];$('#stackCemsCount').textContent=comps.length+' comparison'+(comps.length===1?'':'s');
-  $('#stackCemsBody').innerHTML=comps.length?comps.map((c,i)=>`<tr><td><b>${esc(c.pollutant||'—')}</b><div class="stack-source">${esc(c.method||'')}</div></td><td>${esc(c.sheet||'—')}</td><td>${c.runs?.length||0}</td><td>${esc(c.avgRM||'—')}</td><td>${esc(c.avgCems||'—')}</td><td>${esc(c.ra||'—')}</td><td>${esc(c.raLimit||'—')}</td><td>${esc(c.bias||'—')}</td><td><select data-cems-status="${i}"><option ${c.status==='PASS'?'selected':''}>PASS</option><option ${c.status==='FAIL'?'selected':''}>FAIL</option><option ${c.status==='REVIEW'?'selected':''}>REVIEW</option></select><div class="stack-source">${c.statusSource==='workbook'?'from workbook':c.statusSource==='calculated-ra'?'auto RA ≤ limit':'review'}</div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No RM vs CEMS table was confidently detected. Pollutant/RATA worksheet layouts can be added as we see real examples.</td></tr>';
+  const comps=stackDraft.cemsComparisons||[];$('#stackCemsCount').textContent=comps.length+(isP60?' active check':' comparison')+(comps.length===1?'':'s');$('#stackCemsHeading').textContent=isP60?'Part 60 RATA Performance Checks':'RM vs CEMS Comparisons';
+  $('#stackCemsHead').innerHTML=isP60?'<tr><th>Parameter</th><th>Performance Spec</th><th>Runs</th><th>RM Avg</th><th>CEMS Avg</th><th>Relative Accuracy</th><th>Requirement</th><th>Calculation Basis</th><th>Status</th></tr>':'<tr><th>Pollutant</th><th>Worksheet</th><th>Runs</th><th>RM Avg</th><th>CEMS Avg</th><th>Relative Accuracy</th><th>RA Limit</th><th>Bias</th><th>Status</th></tr>';
+  $('#stackCemsBody').innerHTML=comps.length?comps.map((c,i)=>isP60
+    ?`<tr><td><b>${esc(c.pollutant||'—')}</b><div class="stack-source">${esc(c.unit||'')}</div></td><td>${esc(c.method||'—')}</td><td>${c.runs?.length||0}</td><td>${esc(c.avgRM||'—')}</td><td>${esc(c.avgCems||'—')}</td><td>${esc(c.ra||'—')}</td><td>${esc(c.criterion||c.raLimit||'—')}</td><td>${esc(c.basisLabel||c.basis||'—')}</td><td><select data-cems-status="${i}"><option ${c.status==='PASS'?'selected':''}>PASS</option><option ${c.status==='FAIL'?'selected':''}>FAIL</option><option ${c.status==='REVIEW'?'selected':''}>REVIEW</option></select><div class="stack-source">Part 60 workbook logic</div></td></tr>`
+    :`<tr><td><b>${esc(c.pollutant||'—')}</b><div class="stack-source">${esc(c.method||'')}</div></td><td>${esc(c.sheet||'—')}</td><td>${c.runs?.length||0}</td><td>${esc(c.avgRM||'—')}</td><td>${esc(c.avgCems||'—')}</td><td>${esc(c.ra||'—')}</td><td>${esc(c.raLimit||'—')}</td><td>${esc(c.bias||'—')}</td><td><select data-cems-status="${i}"><option ${c.status==='PASS'?'selected':''}>PASS</option><option ${c.status==='FAIL'?'selected':''}>FAIL</option><option ${c.status==='REVIEW'?'selected':''}>REVIEW</option></select><div class="stack-source">${c.statusSource==='workbook'?'from workbook':c.statusSource==='calculated-ra'?'auto RA ≤ limit':'review'}</div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No RM vs CEMS table was confidently detected.</td></tr>';
   $$('[data-cems-status]').forEach(el=>el.onchange=()=>{const c=stackDraft.cemsComparisons[+el.dataset.cemsStatus];if(c){c.status=el.value;c.statusSource='manual'}});
 }
 function resetStackImport(){stackWorkbook=[];stackDraft=null;$('#stackDataFile').value='';$('#stackReview').style.display='none';$('#stackScanStatus').textContent=''}
@@ -558,21 +642,27 @@ async function readStackWorkbookSafely(file,mode='stack'){
   // Avoid retaining formula/style metadata we do not need for preliminary reporting.
   const wb=XLSX.read(buffer,{type:'array',cellDates:false,cellStyles:false,cellHTML:false,cellNF:false,cellFormula:false});
   const names=wb.SheetNames||[];
-  const ordered=[...names].sort((a,b)=>{
-    const score=n=>/emissions?|results? summary/i.test(n)?0:/rata|cems|relative accuracy|nox|so2|co|o2|voc|thc|h2s|nh3|hcl|hf|pm|particulate|mercury|formaldehyde/i.test(n)?1:2;
+  const metaList=(wb.Workbook&&Array.isArray(wb.Workbook.Sheets))?wb.Workbook.Sheets:[];
+  const metaFor=name=>metaList.find(x=>x.name===name)||null;
+  // Preliminary reports should respect the workbook's active/visible configuration. Hidden
+  // calculation, Part 75, helper and unused template sheets are still available to QA/QC,
+  // but are deliberately excluded from client-facing report detection.
+  const eligible=mode==='qaqc'?names:names.filter(name=>{const m=metaFor(name);return !(m&&m.Hidden)});
+  const ordered=[...eligible].sort((a,b)=>{
+    const score=n=>/\(p60\)|part\s*60|rata|relative accuracy/i.test(n)?0:/emissions?|results? summary/i.test(n)?1:/cems|nox|so2|co|o2|voc|thc|h2s|nh3|hcl|hf|pm|particulate|mercury|formaldehyde/i.test(n)?2:3;
     return score(a)-score(b);
   });
   const parsed=[];
   for(let i=0;i<ordered.length;i++){
     const name=ordered[i];
-    const statusEl=mode==='qaqc'?$('#qaqcScanStatus'):$('#stackScanStatus');if(statusEl)statusEl.textContent=`Reading worksheet ${i+1} of ${ordered.length}: ${name}...`;
+    const statusEl=mode==='qaqc'?$('#qaqcScanStatus'):$('#stackScanStatus');if(statusEl)statusEl.textContent=`Reading ${mode==='qaqc'?'worksheet':'active worksheet'} ${i+1} of ${ordered.length}: ${name}...`;
     // Give mobile browsers a chance to repaint between worksheets.
     if(i%2===0)await new Promise(r=>setTimeout(r,0));
     const rows=safeSheetRows(wb.Sheets[name]);
-    const meta=(wb.Workbook&&Array.isArray(wb.Workbook.Sheets))?wb.Workbook.Sheets.find(x=>x.name===name):null;
+    const meta=metaFor(name);
     if(rows.length)parsed.push({name,rows,hidden:!!(meta&&meta.Hidden)});
   }
-  return {parsed,total:names.length};
+  return {parsed,total:names.length,considered:ordered.length,visible:names.length-metaList.filter(x=>x&&x.Hidden).length};
 }
 $('#stackDataFile').addEventListener('change',async e=>{
   if(!roleCan('data')){e.target.value='';return toast('Data write access required')}
@@ -590,7 +680,9 @@ $('#stackDataFile').addEventListener('change',async e=>{
     await new Promise(r=>setTimeout(r,20));
     stackDraft=buildStackDraft(f.name);
     const emissions=stackDraft.results.length,cems=stackDraft.cemsComparisons.length,runs=stackDraft.runCount;
-    $('#stackScanStatus').textContent=`Scanned ${stackWorkbook.length} populated worksheet${stackWorkbook.length===1?'':'s'} (${loaded.total} total) • ${emissions} emissions result${emissions===1?'':'s'} • ${cems} RM/CEMS comparison${cems===1?'':'s'} • up to ${runs} run${runs===1?'':'s'} detected. Review before creating the preliminary report.`;
+    $('#stackScanStatus').textContent=stackDraft.reportKind==='PART60_RATA'
+      ?`Part 60 RATA recognized • ${runs} retained run${runs===1?'':'s'} • ${cems} active performance check${cems===1?'':'s'} • hidden/inactive template sheets excluded from the preliminary report.`
+      :`Scanned ${stackWorkbook.length} active populated worksheet${stackWorkbook.length===1?'':'s'} (${loaded.total} total) • ${emissions} emissions result${emissions===1?'':'s'} • ${cems} RM/CEMS comparison${cems===1?'':'s'} • up to ${runs} run${runs===1?'':'s'} detected. Review before creating the preliminary report.`;
     renderStackReview();
     $('#stackReview').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){
@@ -780,12 +872,16 @@ function emissionResultsTableHtml(t){
   return `<h2>Preliminary Emissions Results</h2><table><thead><tr><th>Parameter</th>${labels.map(l=>`<th>${esc(l)}</th>`).join('')}<th>Average</th><th>Units</th><th>Applicable Standard</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="${5+labels.length}">No emissions results were detected.</td></tr>`}</tbody></table>`;
 }
 function cemsComparisonHtml(t){
-  const comps=t.cemsComparisons||[];if(!comps.length)return '<h2>RM vs CEMS Comparisons</h2><p>No RM vs CEMS comparison table was detected in the imported workbook.</p>';
+  const comps=t.cemsComparisons||[],isP60=t.reportKind==='PART60_RATA';if(!comps.length)return isP60?'':'<h2>RM vs CEMS Comparisons</h2><p>No RM vs CEMS comparison table was detected in the imported workbook.</p>';
+  if(isP60)return `<h2>Part 60 RATA Performance Results</h2>${comps.map(c=>`<div class="comparison-block"><h3>${esc(c.pollutant||c.sheet||'RATA Parameter')} <span class="comparison-status ${String(c.status||'REVIEW').toLowerCase()}">${esc(c.status||'REVIEW')}</span></h3><div class="comparison-meta"><b>${esc(c.method||'Part 60')}</b>${c.unit?` • ${esc(c.unit)}`:''} • Relative Accuracy: <b>${esc(c.ra||'—')}</b> • Requirement: <b>${esc(c.criterion||c.raLimit||'—')}</b> • Basis: ${esc(c.basisLabel||c.basis||'—')}</div><table><thead><tr><th>Run</th><th>Date</th><th>Time</th><th>Reference Method</th><th>CEMS</th><th>Difference</th></tr></thead><tbody>${(c.runs||[]).map(r=>`<tr><td>${esc(r.label)}</td><td>${esc(r.date||'—')}</td><td>${esc(r.start&&r.end?`${r.start}–${r.end}`:(r.start||r.end||'—'))}</td><td>${esc(r.rm||'—')}</td><td>${esc(r.cems||'—')}</td><td>${esc(r.diff||'—')}</td></tr>`).join('')||'<tr><td colspan="6">No retained run-level comparison values detected.</td></tr>'}</tbody></table><div class="comparison-meta" style="margin-top:7px">RM Average: <b>${esc(c.avgRM||'—')}</b> • CEMS Average: <b>${esc(c.avgCems||'—')}</b>${c.meanDiff?` • Mean Difference: <b>${esc(c.meanDiff)}</b>`:''}${c.cc?` • Confidence Coefficient: <b>${esc(c.cc)}</b>`:''}${c.standard?` • Applicable Source Standard: <b>${esc(c.standard)} ${esc(c.unit||'')}</b>`:''}</div>${c.status==='PASS'?`<div class="stack-preview-note"><b>Preliminary determination:</b> ${esc(c.pollutant)} satisfies the ${esc(c.method||'Part 60')} relative-accuracy requirement shown in the workbook.</div>`:''}</div>`).join('')}`;
   return `<h2>RM vs CEMS Comparisons</h2>${comps.map(c=>`<div class="comparison-block"><h3>${esc(c.pollutant||c.sheet||'CEMS Comparison')} <span class="comparison-status ${String(c.status||'REVIEW').toLowerCase()}">${esc(c.status||'REVIEW')}</span></h3><div class="comparison-meta">${esc(c.method||'')}${c.sheet?` • Worksheet: ${esc(c.sheet)}`:''}${c.ra?` • Relative Accuracy: ${esc(c.ra)}`:''}${c.raLimit?` • RA Limit: ${esc(c.raLimit)}`:''}${c.bias?` • Bias: ${esc(c.bias)}`:''}</div><table><thead><tr><th>Run</th><th>Reference Method (RM)</th><th>CEMS</th><th>Difference</th><th>Status</th></tr></thead><tbody>${(c.runs||[]).map(r=>`<tr><td>${esc(r.label)}</td><td>${esc(r.rm||'—')}</td><td>${esc(r.cems||'—')}</td><td>${esc(r.diff||'—')}</td><td>${esc(r.status||'—')}</td></tr>`).join('')||'<tr><td colspan="5">No run-level comparison values detected.</td></tr>'}</tbody></table><div class="comparison-meta" style="margin-top:7px">RM Average: <b>${esc(c.avgRM||'—')}</b> • CEMS Average: <b>${esc(c.avgCems||'—')}</b>${c.unit?` • Units: ${esc(c.unit)}`:''}</div></div>`).join('')}`;
 }
 function stackTestSummaryHtml(t){
-  const results=t.results||[],comps=t.cemsComparisons||[],pass=[...results,...comps].filter(x=>x.status==='PASS').length,fail=[...results,...comps].filter(x=>x.status==='FAIL').length,review=[...results,...comps].filter(x=>x.status==='REVIEW').length,accent=state.company.accent||'#d1a64a',logo=state.company.logo?`<img src="${state.company.logo}" alt="Logo">`:'',overall=preliminaryOverallStatus(t),runCount=Math.max(t.runCount||0,...results.map(r=>resultRuns(r).length),...comps.map(c=>c.runs?.length||0));
-  return `<div class="report-preview" style="--print-accent:${accent}"><div class="prelim-banner"><span>PRELIMINARY RESULTS</span><small>Subject to final QA/QC and final report issuance</small></div><div class="brandline"><div>${logo}<h1 style="margin:6px 0 0">${esc(t.name||'Preliminary Stack Test Results')}</h1><div class="muted">${esc(state.company.name)} • Preliminary Stack Test Results</div></div><div class="statusstamp">PRELIMINARY</div></div><div class="prelim-disclaimer"><b>Preliminary Data Notice:</b> These results are provided for immediate client review and are subject to final QA/QC, data validation, regulatory applicability review, calculation verification, and issuance of the final test report. This document is not the final compliance report.</div><p><b>Client:</b> ${esc(t.client||'—')}<br><b>Facility:</b> ${esc(t.facility||'—')} &nbsp; <b>Source / Unit:</b> ${esc(t.source||'—')}<br><b>Project:</b> ${esc(t.project||'—')} &nbsp; <b>Test Date:</b> ${esc(t.testDate||'—')}<br><b>Prepared By:</b> ${esc(t.preparedBy||'—')}</p><div class="summarygrid"><div class="summarybox"><span class="muted">Largest Run Set</span><b>${runCount||'—'}</b></div><div class="summarybox"><span class="muted">Emissions Results</span><b>${results.length}</b></div><div class="summarybox"><span class="muted">RM/CEMS Checks</span><b>${comps.length}</b></div><div class="summarybox"><span class="muted">Preliminary Status</span><b>${overall}</b></div></div>${t.methods?.length?`<p><b>Methods Detected:</b> ${esc(t.methods.join(' • '))}</p>`:''}${t.notes?`<h2>Preliminary Notes</h2><p class="prelim-notes">${esc(t.notes)}</p>`:''}${emissionResultsTableHtml(t)}${cemsComparisonHtml(t)}<p class="stack-preview-note"><b>Status summary:</b> ${pass} passing • ${fail} failing • ${review} requiring review. Explicit workbook status is used when detected. Any automatic calculation is labeled during review and should be confirmed before client release.</p><p class="muted" style="margin-top:22px;border-top:1px solid #ccd3d8;padding-top:8px">PRELIMINARY • Generated with ReportFlow Pro • ${esc(state.company.email||'')}</p></div>`;
+  const results=t.results||[],comps=t.cemsComparisons||[],pass=[...results,...comps].filter(x=>x.status==='PASS').length,fail=[...results,...comps].filter(x=>x.status==='FAIL').length,review=[...results,...comps].filter(x=>x.status==='REVIEW').length,accent=state.company.accent||'#d1a64a',logo=state.company.logo?`<img src="${state.company.logo}" alt="Logo">`:'',overall=preliminaryOverallStatus(t),runCount=Math.max(t.runCount||0,...results.map(r=>resultRuns(r).length),...comps.map(c=>c.runs?.length||0)),isP60=t.reportKind==='PART60_RATA';
+  const scope=isP60?`<div class="prelim-disclaimer"><b>Report Scope:</b> Part 60 RATA preliminary results only. ${esc(t.reportScope||'Inactive and helper worksheets are excluded from this client-facing summary.')}</div>`:'';
+  const summary=isP60?`<div class="summarygrid"><div class="summarybox"><span class="muted">RATA Runs</span><b>${runCount||'—'}</b></div><div class="summarybox"><span class="muted">Parameters</span><b>${comps.length}</b></div><div class="summarybox"><span class="muted">Performance Specs</span><b>${t.methods?.length||'—'}</b></div><div class="summarybox"><span class="muted">Preliminary Status</span><b>${overall}</b></div></div>`:`<div class="summarygrid"><div class="summarybox"><span class="muted">Largest Run Set</span><b>${runCount||'—'}</b></div><div class="summarybox"><span class="muted">Emissions Results</span><b>${results.length}</b></div><div class="summarybox"><span class="muted">RM/CEMS Checks</span><b>${comps.length}</b></div><div class="summarybox"><span class="muted">Preliminary Status</span><b>${overall}</b></div></div>`;
+  const methods=t.methods?.length?`<p><b>${isP60?'Performance Specifications':'Methods Detected'}:</b> ${esc(t.methods.join(' • '))}${isP60&&t.regulatoryBasis?` &nbsp; <b>Regulatory Basis:</b> ${esc(t.regulatoryBasis)}`:''}</p>`:'';
+  return `<div class="report-preview" style="--print-accent:${accent}"><div class="prelim-banner"><span>PRELIMINARY RESULTS</span><small>Subject to final QA/QC and final report issuance</small></div><div class="brandline"><div>${logo}<h1 style="margin:6px 0 0">${esc(t.name||'Preliminary Stack Test Results')}</h1><div class="muted">${esc(state.company.name)} • ${isP60?'Part 60 RATA':'Preliminary Stack Test Results'}</div></div><div class="statusstamp">PRELIMINARY</div></div><div class="prelim-disclaimer"><b>Preliminary Data Notice:</b> These results are provided for immediate client review and are subject to final QA/QC, data validation, regulatory applicability review, calculation verification, and issuance of the final test report. This document is not the final compliance report.</div>${scope}<p><b>Client:</b> ${esc(t.client||'—')}<br><b>Facility:</b> ${esc(t.facility||'—')} &nbsp; <b>Source / Unit:</b> ${esc(t.source||'—')}<br><b>Project:</b> ${esc(t.project||'—')} &nbsp; <b>Test Date:</b> ${esc(t.testDate||'—')}<br><b>Prepared By:</b> ${esc(t.preparedBy||'—')}</p>${summary}${methods}${t.notes?`<h2>Preliminary Notes</h2><p class="prelim-notes">${esc(t.notes)}</p>`:''}${isP60?'':emissionResultsTableHtml(t)}${cemsComparisonHtml(t)}<p class="stack-preview-note"><b>Status summary:</b> ${pass} passing • ${fail} failing • ${review} requiring review. ${isP60?'Part 60 status is based on the active workbook performance-summary criteria shown above.':'Explicit workbook status is used when detected. Any automatic calculation is labeled during review and should be confirmed before client release.'}</p><p class="muted" style="margin-top:22px;border-top:1px solid #ccd3d8;padding-top:8px">PRELIMINARY • Generated with ReportFlow Pro • ${esc(state.company.email||'')}</p></div>`;
 }
 function previewDraftPreliminary(){
   if(!stackDraft)return;syncStackDraftFromForm();
