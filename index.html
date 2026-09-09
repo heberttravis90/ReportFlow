@@ -569,7 +569,8 @@ async function readStackWorkbookSafely(file,mode='stack'){
     // Give mobile browsers a chance to repaint between worksheets.
     if(i%2===0)await new Promise(r=>setTimeout(r,0));
     const rows=safeSheetRows(wb.Sheets[name]);
-    if(rows.length)parsed.push({name,rows});
+    const meta=(wb.Workbook&&Array.isArray(wb.Workbook.Sheets))?wb.Workbook.Sheets.find(x=>x.name===name):null;
+    if(rows.length)parsed.push({name,rows,hidden:!!(meta&&meta.Hidden)});
   }
   return {parsed,total:names.length};
 }
@@ -613,7 +614,8 @@ const QA_FIELD_RULES=[
   {id:'stop-time',name:'Run stop time',severity:'warning',re:/(run stop|stop time|end time)/i},
   {id:'vacuum',name:'Sampling vacuum',severity:'warning',re:/(vacuum|in\. ?hg)/i}
 ];
-function qaMeaningful(v){const t=cleanCell(v);if(!t)return false;if(/^[-–—]+$/.test(t))return false;return true}
+function qaIsError(v){return /^#(REF!|DIV\/0!|VALUE!|N\/A|NAME\?|NUM!|NULL!)/i.test(cleanCell(v))}
+function qaMeaningful(v){const t=cleanCell(v).trim();if(!t)return false;if(/^[-–—]+$/.test(t))return false;if(qaIsError(t))return false;return true}
 function qaLikelyUnit(v){return /^(°?[fc]|deg\.? ?[fc]|in\.? ?hg|mm ?hg|cfm|lpm|psi|%|sec|seconds|min|minutes|hr|hrs|hours)$/i.test(cleanCell(v))}
 function qaFindNearbyValue(row,ci){
   for(let j=ci+1;j<Math.min(row.length,ci+5);j++){const v=cleanCell(row[j]);if(!v||qaLikelyUnit(v))continue;if(QA_FIELD_RULES.some(r=>r.re.test(v)))break;return {value:v,ci:j}}
@@ -621,7 +623,86 @@ function qaFindNearbyValue(row,ci){
 }
 function qaAddIssue(list,issue,seen){const key=[issue.ruleId,issue.sheet,issue.location,issue.run||'',issue.title].join('|');if(seen.has(key))return;seen.add(key);list.push({...issue,id:'qa_'+Math.random().toString(36).slice(2,10),acknowledged:false})}
 function qaDetectedMethods(workbook){const text=workbook.map(sh=>sh.name+' '+sh.rows.slice(0,80).flat().map(cleanCell).join(' ')).join(' ');const hits=[];for(const m of ['1','2','3','4','5','6C','7E','10','17','19','20','23','25A','26A','29','201A','202','316','320']){const re=new RegExp(`(?:method|epa|m)\\s*[-#:]?\\s*${m.replace(/[A-Z]/g,x=>'\\s*'+x)}\\b`,'i');if(re.test(text))hits.push('Method '+m)}if(/\brata\b|relative accuracy/i.test(text))hits.push('RATA');return [...new Set(hits)]}
+
+function qaColIndex(col){let n=0;for(const ch of String(col||'').toUpperCase())n=n*26+(ch.charCodeAt(0)-64);return n-1}
+function qaSheetByName(workbook,name){return workbook.find(x=>String(x.name).toLowerCase()===String(name).toLowerCase())||null}
+function qaRowByNumber(sh,rowNo){return sh?.rows?.find(r=>(r._excelRow||0)===rowNo)||null}
+function qaCellRC(sh,rowNo,ci){const r=qaRowByNumber(sh,rowNo);return r&&ci<r.length?r[ci]:''}
+function qaCellA1(sh,addr){const m=/^([A-Z]+)(\d+)$/i.exec(addr||'');return m?qaCellRC(sh,Number(m[2]),qaColIndex(m[1])):''}
+function qaAstTemplate(workbook){const names=new Set(workbook.map(x=>String(x.name).toLowerCase()));const r1=qaSheetByName(workbook,'RUN 1');const txt=r1?r1.rows.slice(0,20).flat().map(cleanCell).join(' '):'';return ['pi','qa','m1','m4','run 1','emissions'].every(n=>names.has(n))&&/STACK DATA/i.test(txt)&&/LEAK CHECKS/i.test(txt)}
+function qaAstIssueCell(issues,seen,sh,addr,ruleId,name,severity='critical',detail=''){
+  const v=qaCellA1(sh,addr),location=`${sh.name}!${addr}`;
+  if(qaIsError(v)){qaAddIssue(issues,{ruleId,title:`Spreadsheet error in ${name}: ${cleanCell(v)}`,detail:detail||`The recognized ${name.toLowerCase()} field contains an Excel error instead of usable data.`,severity:'critical',sheet:sh.name,location},seen);return false}
+  if(!qaMeaningful(v)){qaAddIssue(issues,{ruleId,title:`Missing ${name}`,detail:detail||`This required ${name.toLowerCase()} field is blank or still shows the template placeholder (--).`,severity,sheet:sh.name,location},seen);return false}
+  return true
+}
+function qaAstActiveRuns(workbook){return workbook.filter(sh=>/^RUN\s+\d+$/i.test(sh.name)).filter(sh=>{const date=qaCellA1(sh,'D3'),label=cleanCell(qaCellA1(sh,'F3')),status=cleanCell(qaCellA1(sh,'H3')).toUpperCase();return qaMeaningful(date)&&/^RUN\s+\d+$/i.test(label)&&status!=='VOID'})}
+function qaAstFindRow(sh,colIndex,value,minRow=1,maxRow=999){const target=cleanCell(value).toLowerCase();if(!target)return null;return sh?.rows?.find(r=>{const rn=r._excelRow||0;return rn>=minRow&&rn<=maxRow&&cleanCell(r[colIndex]).toLowerCase()===target})||null}
+function qaAstChecklist(workbook,issues,seen,passed){
+  let answered=0,total=0;
+  for(const cfg of [{name:'Setup Check',severity:'warning'},{name:'Review Check',severity:'warning'}]){
+    const sh=qaSheetByName(workbook,cfg.name);if(!sh)continue;
+    for(const row of sh.rows){const q=cleanCell(row[0]),rn=row._excelRow||0;if(!q||rn===1||/questions?$/i.test(q))continue;if(!/[?]|^(is|are|do|does|did|has|have|was|were)\b/i.test(q))continue;total++;const ans=cleanCell(row[1]);if(qaMeaningful(ans)){answered++;continue}qaAddIssue(issues,{ruleId:'ast-checklist',title:`${cfg.name} item unanswered`,detail:q,severity:cfg.severity,sheet:sh.name,location:`${sh.name}!B${rn}`},seen)}
+  }
+  if(total&&answered===total)passed.push({id:'pass_ast_checklist',title:'Setup and review checklists completed',severity:'passed',detail:`All ${total} recognized checklist questions have an answer.`,sheet:'Workbook',location:'Setup Check / Review Check',acknowledged:false})
+}
+function qaAstMetadata(workbook,issues,seen,passed){
+  const pi=qaSheetByName(workbook,'PI');if(!pi)return;
+  const fields=[['B3','Location','critical'],['B4','Source','critical'],['B5','Project number','critical'],['B6','Parameter(s)','critical'],['B7','Project Manager','warning'],['B8','Field Team Leader','warning'],['B9','Meter Box Operator','warning'],['B15','Field Data QA Conducted By','critical'],['B16','Lab Data Entered By','warning'],['B17','Lab Data QC\'d By','critical'],['B22','Template Prepared By','warning'],['E22','Template prepared date','warning'],['B23','Template Approved By','warning'],['E23','Template approved date','warning']];
+  let ok=true;for(const [addr,name,sev] of fields)ok=qaAstIssueCell(issues,seen,pi,addr,'ast-meta',name,sev)&&ok;
+  if(ok)passed.push({id:'pass_ast_meta',title:'Project and sign-off metadata complete',severity:'passed',detail:'Recognized PI project, field QA, lab, and template approval fields are populated.',sheet:'PI',location:'PI sheet',acknowledged:false})
+}
+function qaAstRunChecks(workbook,activeRuns,issues,seen,passed){
+  const fixed=[
+    ['D3','run date','critical'],['K2','start time','critical'],['K3','end time','critical'],['H6','meter box ID','critical'],['H7','meter box Y factor','critical'],['H8','ΔH@ calibration value','critical'],['H9','probe ID','critical'],['H10','liner material','warning'],['H11','pitot ID','critical'],['H12','pitot coefficient (Cp)','critical'],['H13','nozzle ID','critical'],['H14','nozzle diameter','critical'],['P6','final barometric pressure','critical'],['P7','final static pressure','warning'],['P8','final O₂','warning'],['P9','final CO₂','warning'],['K12','pre-test leak rate','critical'],['O12','post-test leak rate','critical'],['K13','pre-test leak-check vacuum','critical'],['O13','post-test leak-check vacuum','critical'],['K14','pre-test pitot check','critical'],['O14','post-test pitot check','critical'],['E164','final DGM reading','critical']
+  ];
+  const sampleFields=[
+    [4,'dry gas meter reading','critical'],[6,'pitot ΔP','critical'],[7,'DGM temperature','warning'],[9,'stack temperature','critical'],[11,'orifice ΔH','critical'],[12,'pump vacuum','warning'],[13,'probe temperature','critical'],[14,'filter temperature','critical'],[15,'impinger exit temperature','critical']
+  ];
+  let fixedOk=true,sampleOk=true,runCount=0,pointCount=0;
+  for(const sh of activeRuns){runCount++;const runLabel=cleanCell(qaCellA1(sh,'F3'))||sh.name;
+    for(const [addr,name,sev] of fixed)fixedOk=qaAstIssueCell(issues,seen,sh,addr,'ast-run-fixed',`${name} — ${runLabel}`,sev)&&fixedOk;
+    for(let rn=20;rn<=163;rn++){const point=qaCellRC(sh,rn,1);if(!qaMeaningful(point))continue;pointCount++;for(const [ci,name,sev] of sampleFields){const v=qaCellRC(sh,rn,ci);const addr=`${qaExcelCol(ci)}${rn}`;if(qaIsError(v)){qaAddIssue(issues,{ruleId:'ast-sample',title:`Spreadsheet error in ${name} — ${runLabel}`,detail:`Sample point ${cleanCell(point)} contains ${cleanCell(v)} instead of a usable ${name}.`,severity:'critical',sheet:sh.name,location:`${sh.name}!${addr}`},seen);sampleOk=false}else if(!qaMeaningful(v)){qaAddIssue(issues,{ruleId:'ast-sample',title:`Missing ${name} — ${runLabel}`,detail:`Sample point ${cleanCell(point)} has no ${name} entered.`,severity:sev,sheet:sh.name,location:`${sh.name}!${addr}`},seen);sampleOk=false}}
+    }
+    const iso=Number(cleanCell(qaCellA1(sh,'P167')).replace(/,/g,''));if(Number.isFinite(iso)&&(iso<90||iso>110))qaAddIssue(issues,{ruleId:'ast-iso',title:`Isokinetic result outside 90–110% — ${runLabel}`,detail:`The run summary shows ${iso.toFixed(1)}% isokinetic. Review the run and applicable method requirements.`,severity:'critical',sheet:sh.name,location:`${sh.name}!P167`},seen)
+  }
+  if(fixedOk)passed.push({id:'pass_ast_fixed',title:'Active-run setup and leak-check fields complete',severity:'passed',detail:`Checked ${runCount} active run sheet${runCount===1?'':'s'} for dates, timing, equipment IDs, calibration values, pre/post leak checks, gas inputs, and final DGM readings.`,sheet:'Workbook',location:'Active RUN sheets',acknowledged:false});
+  if(sampleOk&&pointCount)passed.push({id:'pass_ast_samples',title:'Active sample-point data complete',severity:'passed',detail:`Checked ${pointCount} active sample-point rows for DGM, ΔP, temperatures, ΔH, vacuum, and impinger-exit data.`,sheet:'Workbook',location:'Active RUN sample rows',acknowledged:false})
+}
+function qaAstMoisture(workbook,activeRuns,issues,seen,passed){
+  const sh=qaSheetByName(workbook,'M4');if(!sh)return;let ok=true,checks=0;
+  for(const run of activeRuns){const n=Number((run.name.match(/\d+/)||[])[0]);if(!n)continue;const header=sh.rows.find(r=>/^RUN\s+/i.test(cleanCell(r[0]))&&Number((cleanCell(r[0]).match(/\d+/)||[])[0])===n);if(!header)continue;const base=header._excelRow||0,contentsRow=base+2,initialRow=base+3,finalRow=base+4;
+    for(let ci=1;ci<=8;ci++){const contents=qaCellRC(sh,contentsRow,ci);if(!qaMeaningful(contents))continue;checks++;for(const [rn,label] of [[initialRow,'initial'],[finalRow,'final']]){const v=qaCellRC(sh,rn,ci),addr=`${qaExcelCol(ci)}${rn}`;if(qaIsError(v)){qaAddIssue(issues,{ruleId:'ast-m4',title:`Spreadsheet error in ${label} impinger value — Run ${n}`,detail:`Impinger ${ci} (${cleanCell(contents)}) contains ${cleanCell(v)}.`,severity:'critical',sheet:sh.name,location:`${sh.name}!${addr}`},seen);ok=false}else if(!qaMeaningful(v)){qaAddIssue(issues,{ruleId:'ast-m4',title:`Missing ${label} impinger mass — Run ${n}`,detail:`Impinger ${ci} (${cleanCell(contents)}) is active for this train but its ${label} mass is blank.`,severity:'critical',sheet:sh.name,location:`${sh.name}!${addr}`},seen);ok=false}}
+    }
+  }
+  if(ok&&checks)passed.push({id:'pass_ast_m4',title:'Method 4 moisture train entries complete',severity:'passed',detail:`Initial and final values were found for all ${checks} active impinger positions across the active runs.`,sheet:'M4',location:'Active Run blocks',acknowledged:false})
+}
+function qaAstEquipmentQA(workbook,activeRuns,issues,seen,passed){
+  const sh=qaSheetByName(workbook,'QA');if(!sh)return;let ok=true;
+  const nozzles=[...new Set(activeRuns.map(r=>cleanCell(qaCellA1(r,'H13'))).filter(qaMeaningful))],pitots=[...new Set(activeRuns.map(r=>cleanCell(qaCellA1(r,'H11'))).filter(qaMeaningful))],probes=[...new Set(activeRuns.map(r=>cleanCell(qaCellA1(r,'H9'))).filter(qaMeaningful))],meters=[...new Set(activeRuns.map(r=>cleanCell(qaCellA1(r,'H6'))).filter(qaMeaningful))];
+  for(const id of nozzles){const row=qaAstFindRow(sh,1,id,9,14);if(!row){qaAddIssue(issues,{ruleId:'ast-eq',title:`No nozzle calibration record found — ${id}`,detail:'The active nozzle ID was not located in the QA nozzle calibration table.',severity:'critical',sheet:'QA',location:'QA!B9:B14'},seen);ok=false;continue}for(const ci of [0,2,3,4])if(!qaMeaningful(row[ci])){qaAddIssue(issues,{ruleId:'ast-eq',title:`Incomplete nozzle calibration record — ${id}`,detail:'Date and three nozzle diameter measurements should be completed for the active nozzle.',severity:'critical',sheet:'QA',location:`QA!${qaExcelCol(ci)}${row._excelRow}`},seen);ok=false}}
+  for(const id of pitots){const row=qaAstFindRow(sh,1,id,18,23);if(!row){qaAddIssue(issues,{ruleId:'ast-eq',title:`No pitot inspection record found — ${id}`,detail:'The active pitot ID was not located in the QA pitot inspection table.',severity:'critical',sheet:'QA',location:'QA!B18:B23'},seen);ok=false;continue}for(const ci of [0,2,3,4])if(!qaMeaningful(row[ci])){qaAddIssue(issues,{ruleId:'ast-eq',title:`Incomplete pitot inspection — ${id}`,detail:'The pitot QA row is missing a date or inspection response.',severity:'critical',sheet:'QA',location:`QA!${qaExcelCol(ci)}${row._excelRow}`},seen);ok=false}}
+  for(const id of probes){const row=qaAstFindRow(sh,1,id,25,30);if(!row){qaAddIssue(issues,{ruleId:'ast-eq',title:`No probe/thermocouple calibration record found — ${id}`,detail:'The active probe ID was not located in the QA temperature calibration table.',severity:'critical',sheet:'QA',location:'QA!B25:B30'},seen);ok=false;continue}for(const ci of [0,2,3])if(!qaMeaningful(row[ci])){qaAddIssue(issues,{ruleId:'ast-eq',title:`Incomplete probe temperature calibration — ${id}`,detail:'The probe QA row is missing the date, reference temperature, or indicated temperature.',severity:'critical',sheet:'QA',location:`QA!${qaExcelCol(ci)}${row._excelRow}`},seen);ok=false}}
+  for(const id of meters){const row=qaAstFindRow(sh,1,id,47,54);if(!row){qaAddIssue(issues,{ruleId:'ast-eq',title:`No positive-pressure leak check found — meter ${id}`,detail:'The active meter box ID was not located in the QA positive-pressure leak-check table.',severity:'critical',sheet:'QA',location:'QA!B47:B54'},seen);ok=false}else if(!qaMeaningful(row[0])||!qaMeaningful(row[2])){qaAddIssue(issues,{ruleId:'ast-eq',title:`Incomplete meter-box positive-pressure leak check — ${id}`,detail:'The QA meter-box row is missing the date or pass/fail result.',severity:'critical',sheet:'QA',location:`QA!A${row._excelRow}:C${row._excelRow}`},seen);ok=false}}
+  for(const [addr,name] of [['B32','field balance date'],['B33','balance ID'],['B34','certified weight ID'],['B35','certified weight expiration'],['B36','certified weight'],['B37','measured weight'],['A41','barometer QA date'],['C41','barometer damage check'],['D41','barometer reading verification'],['E41','barometer repair/calibration response'],['F41','barometer ID']])ok=qaAstIssueCell(issues,seen,sh,addr,'ast-eq',name,'warning')&&ok;
+  const acetone=sh.rows.find(r=>/^acetone$/i.test(cleanCell(r[0])));if(acetone){if(!qaMeaningful(acetone[1])){qaAddIssue(issues,{ruleId:'ast-eq',title:'Missing acetone lot/ID number',detail:'Acetone is listed as a reagent but its lot/ID number is blank.',severity:'warning',sheet:'QA',location:`QA!B${acetone._excelRow}`},seen);ok=false}}
+  if(ok)passed.push({id:'pass_ast_eq',title:'Equipment and field QA records complete',severity:'passed',detail:'Active nozzle, pitot, probe, meter-box, balance, and barometer QA records were located and populated.',sheet:'QA',location:'QA tables',acknowledged:false})
+}
+function runAstQaqcScan(workbook,fileName){
+  const issues=[],seen=new Set(),passed=[];const activeRuns=qaAstActiveRuns(workbook);
+  passed.push({id:'pass_ast_profile',title:'AST isokinetic field template recognized',severity:'passed',detail:`Template-aware QA/QC rules are active. ${activeRuns.length} populated run sheet${activeRuns.length===1?' was':'s were'} identified; unused placeholder run tabs are ignored.`,sheet:'Workbook',location:'Template profile',acknowledged:false});
+  if(!activeRuns.length)qaAddIssue(issues,{ruleId:'ast-runs',title:'No active run sheets detected',detail:'RUN tabs were found, but none had both a populated run date and active run label.',severity:'critical',sheet:'Workbook',location:'RUN sheets'},seen);
+  qaAstMetadata(workbook,issues,seen,passed);qaAstRunChecks(workbook,activeRuns,issues,seen,passed);qaAstMoisture(workbook,activeRuns,issues,seen,passed);qaAstEquipmentQA(workbook,activeRuns,issues,seen,passed);qaAstChecklist(workbook,issues,seen,passed);
+  // #REF! is always structural. Scan it everywhere, while other template-helper errors are handled only in recognized active fields to avoid false alarms from unused calculation blocks.
+  for(const sh of workbook)for(const row of sh.rows)for(let ci=0;ci<row.length;ci++){const raw=cleanCell(row[ci]);if(/^#REF!/i.test(raw))qaAddIssue(issues,{ruleId:'ast-ref',title:'Broken Excel reference (#REF!)',detail:'A broken cell reference was found and should be repaired before submittal.',severity:'critical',sheet:sh.name,location:qaLocation(sh.name,row,ci)},seen)}
+  if(!issues.some(i=>i.ruleId==='ast-ref'))passed.push({id:'pass_ast_ref',title:'No broken #REF! references found',severity:'passed',detail:'No structural #REF! errors were found in the scanned workbook.',sheet:'Workbook',location:'All scanned sheets',acknowledged:false});
+  const critical=issues.filter(i=>i.severity==='critical').length,warnings=issues.filter(i=>i.severity==='warning').length,score=Math.max(0,Math.min(100,100-critical*6-warnings*1));
+  const methods=[...new Set([...qaDetectedMethods(workbook),'Method 5 / 5B'])];
+  return {fileName,createdAt:nowIso(),issues,passed,methods,sheets:workbook.map(x=>x.name),score,profile:'AST Isokinetic Template',activeRunCount:activeRuns.length}
+}
+
 function runQaqcScan(workbook,fileName){
+  if(qaAstTemplate(workbook))return runAstQaqcScan(workbook,fileName);
   const issues=[],seen=new Set(),foundRules=new Set(),formulaErrors=[];
   for(const sh of workbook){
     const rows=sh.rows;
@@ -629,7 +710,7 @@ function runQaqcScan(workbook,fileName){
       const row=rows[ri];
       for(let ci=0;ci<row.length;ci++){
         const raw=cleanCell(row[ci]),norm=normCell(raw);if(!raw)continue;
-        if(/^#(REF!|DIV\/0!|VALUE!|N\/A|NAME\?|NUM!|NULL!)/i.test(raw))formulaErrors.push({sheet:sh.name,row,ci,value:raw});
+        if(/^#(REF!|DIV\/0!|VALUE!|NAME\?|NUM!|NULL!)/i.test(raw))formulaErrors.push({sheet:sh.name,row,ci,value:raw});
         for(const rule of QA_FIELD_RULES){
           if(!rule.re.test(norm))continue;foundRules.add(rule.id);
           const near=qaFindNearbyValue(row,ci);
@@ -666,7 +747,7 @@ function runQaqcScan(workbook,fileName){
   for(const [id,name,re,severity] of metadata){if(!re.test(allText))qaAddIssue(issues,{ruleId:id,title:`${name} field not located`,detail:`ReportFlow could not confidently locate a ${name.toLowerCase()} field anywhere in the scanned workbook. Confirm it is present and completed before submittal.`,severity,sheet:'Workbook',location:'Layout review'},seen)}
   const passed=[];
   for(const rule of QA_FIELD_RULES){if(foundRules.has(rule.id)&&!issues.some(i=>i.ruleId===rule.id))passed.push({id:'pass_'+rule.id,title:`${rule.name} entries found`,severity:'passed',detail:'Recognized entries were populated in the scanned areas.',sheet:'Workbook',location:'Recognized fields',acknowledged:false})}
-  if(!formulaErrors.length)passed.push({id:'pass_formula',title:'No visible Excel formula errors found',severity:'passed',detail:'No #REF!, #DIV/0!, #VALUE!, #N/A, #NAME?, #NUM!, or #NULL! values were found in the scanned range.',sheet:'Workbook',location:'Scanned cells',acknowledged:false});
+  if(!formulaErrors.length)passed.push({id:'pass_formula',title:'No visible Excel formula errors found',severity:'passed',detail:'No #REF!, #DIV/0!, #VALUE!, #NAME?, #NUM!, or #NULL! values were found in the scanned range.',sheet:'Workbook',location:'Scanned cells',acknowledged:false});
   const totalChecks=Math.max(1,issues.length+passed.length),openCritical=issues.filter(i=>i.severity==='critical').length,openWarnings=issues.filter(i=>i.severity==='warning').length,score=Math.max(0,Math.round((passed.length+openWarnings*.25)/totalChecks*100));
   return {fileName,createdAt:nowIso(),issues,passed,methods,sheets:workbook.map(x=>x.name),score};
 }
@@ -674,7 +755,7 @@ function renderQaqc(){
   if(!qaqcDraft)return;$('#qaqcReview').style.display='block';
   const issues=qaqcDraft.issues||[],ack=issues.filter(i=>i.acknowledged).length,critical=issues.filter(i=>!i.acknowledged&&i.severity==='critical').length,warnings=issues.filter(i=>!i.acknowledged&&i.severity==='warning').length;
   $('#qaqcScore').textContent=qaqcDraft.score+'%';$('#qaqcCritical').textContent=critical;$('#qaqcWarnings').textContent=warnings;$('#qaqcAcknowledged').textContent=ack;
-  const pills=[...(qaqcDraft.methods||[]),...(qaqcDraft.sheets||[]).slice(0,12).map(x=>'Sheet: '+x)];$('#qaqcDetected').innerHTML=pills.map(x=>`<span class="pill">${esc(x)}</span>`).join('');
+  const pills=[...(qaqcDraft.profile?['Profile: '+qaqcDraft.profile]:[]),...(qaqcDraft.activeRunCount?[qaqcDraft.activeRunCount+' active run'+(qaqcDraft.activeRunCount===1?'':'s')]:[]),...(qaqcDraft.methods||[]),...(qaqcDraft.sheets||[]).filter(x=>!/^RUN [4-8]$/i.test(x)).slice(0,10).map(x=>'Sheet: '+x)];$('#qaqcDetected').innerHTML=pills.map(x=>`<span class="pill">${esc(x)}</span>`).join('');
   const filter=$('#qaqcFilter').value;let rows=[...issues,...(qaqcDraft.passed||[])];
   if(filter==='open')rows=rows.filter(x=>x.severity!=='passed'&&!x.acknowledged);else if(filter==='critical')rows=rows.filter(x=>x.severity==='critical'&&!x.acknowledged);else if(filter==='warning')rows=rows.filter(x=>x.severity==='warning'&&!x.acknowledged);else if(filter==='acknowledged')rows=rows.filter(x=>x.acknowledged);
   $('#qaqcList').innerHTML=rows.length?rows.map(x=>`<div class="qaqc-item ${esc(x.severity)} ${x.acknowledged?'acknowledged':''}"><div><div class="qaqc-sev ${esc(x.severity)}">${x.acknowledged?'ACKNOWLEDGED':esc(x.severity)}</div><h4>${esc(x.title)}</h4><p>${esc(x.detail||'')}</p><div class="qaqc-loc">${esc(x.location||'')} ${x.sheet&&x.location!=='Layout review'?'• '+esc(x.sheet):''}</div></div>${x.severity==='passed'?'':`<button class="btn mini" data-qa-ack="${esc(x.id)}">${x.acknowledged?'Unacknowledge':'Acknowledge'}</button>`}</div>`).join(''):'<div class="qaqc-item passed"><div><div class="qaqc-sev passed">CLEAR</div><h4>No findings in this view</h4><p>Change the filter or re-upload the workbook after making corrections.</p></div></div>';
@@ -684,7 +765,7 @@ function resetQaqc(){qaqcWorkbook=[];qaqcDraft=null;$('#qaqcDataFile').value='';
 $('#qaqcReset').onclick=resetQaqc;$('#qaqcFilter').onchange=renderQaqc;$('#qaqcAckWarnings').onclick=()=>{if(!qaqcDraft)return;qaqcDraft.issues.filter(x=>x.severity==='warning').forEach(x=>x.acknowledged=true);renderQaqc();toast('Warnings acknowledged — correct the workbook and re-upload to clear them')};
 $('#qaqcDataFile').addEventListener('change',async e=>{
   if(!roleCan('data')){e.target.value='';return toast('Data write access required')}const f=e.target.files[0];if(!f)return;
-  try{$('#qaqcReview').style.display='none';$('#qaqcScanStatus').textContent='Opening workbook for QA/QC...';if(!(await ensureXlsx()))throw new Error('Excel reader could not load. Check your internet connection and try again.');await new Promise(r=>setTimeout(r,40));const loaded=await readStackWorkbookSafely(f,'qaqc');qaqcWorkbook=loaded.parsed;if(!qaqcWorkbook.length)throw new Error('No readable worksheet data was found in this workbook.');$('#qaqcScanStatus').textContent='Checking recognized required fields and spreadsheet errors...';await new Promise(r=>setTimeout(r,20));qaqcDraft=runQaqcScan(qaqcWorkbook,f.name);const c=qaqcDraft.issues.filter(x=>x.severity==='critical').length,w=qaqcDraft.issues.filter(x=>x.severity==='warning').length;$('#qaqcScanStatus').textContent=`QA/QC scan complete • ${loaded.total} worksheet${loaded.total===1?'':'s'} • ${c} critical • ${w} warning${w===1?'':'s'} • ${qaqcDraft.passed.length} recognized checks passed.`;renderQaqc();$('#qaqcReview').scrollIntoView({behavior:'smooth',block:'start'});audit('QA/QC workbook scan',`${f.name} • ${c} critical • ${w} warnings`)}catch(err){console.error('QA/QC workbook scan failed',err);$('#qaqcReview').style.display='none';$('#qaqcScanStatus').innerHTML=`<span style="color:#ffb4b4"><b>Workbook could not be scanned.</b> ${esc(err?.message||'Unknown import error')}</span>`}
+  try{$('#qaqcReview').style.display='none';$('#qaqcScanStatus').textContent='Opening workbook for QA/QC...';if(!(await ensureXlsx()))throw new Error('Excel reader could not load. Check your internet connection and try again.');await new Promise(r=>setTimeout(r,40));const loaded=await readStackWorkbookSafely(f,'qaqc');qaqcWorkbook=loaded.parsed;if(!qaqcWorkbook.length)throw new Error('No readable worksheet data was found in this workbook.');$('#qaqcScanStatus').textContent='Checking recognized required fields and spreadsheet errors...';await new Promise(r=>setTimeout(r,20));qaqcDraft=runQaqcScan(qaqcWorkbook,f.name);const c=qaqcDraft.issues.filter(x=>x.severity==='critical').length,w=qaqcDraft.issues.filter(x=>x.severity==='warning').length;$('#qaqcScanStatus').textContent=`QA/QC scan complete${qaqcDraft.profile?' • '+qaqcDraft.profile:''} • ${loaded.total} worksheet${loaded.total===1?'':'s'} • ${c} critical • ${w} warning${w===1?'':'s'} • ${qaqcDraft.passed.length} check group${qaqcDraft.passed.length===1?'':'s'} passed.`;renderQaqc();$('#qaqcReview').scrollIntoView({behavior:'smooth',block:'start'});audit('QA/QC workbook scan',`${f.name} • ${c} critical • ${w} warnings`)}catch(err){console.error('QA/QC workbook scan failed',err);$('#qaqcReview').style.display='none';$('#qaqcScanStatus').innerHTML=`<span style="color:#ffb4b4"><b>Workbook could not be scanned.</b> ${esc(err?.message||'Unknown import error')}</span>`}
 });
 
 function preliminaryOverallStatus(t){
