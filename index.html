@@ -4,14 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ReportFlow Pro v7</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#d1a64a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
-
 <style>
 :root{--bg:#0b1015;--panel:#121920;--panel2:#18212a;--panel3:#0e151b;--text:#f3f6f8;--muted:#93a2ad;--accent:#d1a64a;--accent2:#2ba37a;--danger:#d96060;--warn:#e3ad4f;--border:#26323c;--shadow:0 10px 28px rgba(0,0,0,.18);--radius:12px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.4}
@@ -35,8 +27,10 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
 .modalback{position:fixed;inset:0;background:rgba(0,0,0,.74);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}.modalback.show{display:flex}.modal{background:#0d151d;border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);width:min(860px,96vw);max-height:91vh;overflow:auto}.modalhead{position:sticky;top:0;background:#0d151d;border-bottom:1px solid var(--border);padding:13px 15px;display:flex;justify-content:space-between;align-items:center;z-index:2}.modalhead h3{margin:0;font-size:16px}.modalbody{padding:15px}.xbtn{background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer}.report-preview{background:white;color:#182027;border-radius:8px;padding:22px}.report-preview h1,.report-preview h2,.report-preview h3{color:#182027}.report-preview .muted{color:#61707b}.report-preview table{width:100%;border-collapse:collapse;font-size:12px}.report-preview th,.report-preview td{border:1px solid #ccd3d8;padding:7px;text-align:left}.report-preview th{background:#eef2f4}.report-preview .summarygrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.report-preview .summarybox{border:1px solid #d5dce0;padding:10px;border-radius:8px}.report-preview .summarybox b{font-size:20px;display:block}.report-preview .brandline{border-bottom:3px solid var(--print-accent,#d1a64a);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;gap:15px;align-items:center}.report-preview .brandline img{max-height:48px;max-width:170px}.report-preview .statusstamp{font-weight:900;border:2px solid currentColor;border-radius:6px;padding:6px 9px;font-size:11px}
 #toast{position:fixed;bottom:16px;right:16px;background:#16222d;border:1px solid var(--border);padding:10px 12px;border-radius:9px;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s;z-index:70;font-size:12px}#toast.show{opacity:1;transform:none}
 #printSheet{display:none}.permission-note{font-size:11px;color:var(--muted);margin-top:7px}.logo-preview{max-height:70px;max-width:220px;border:1px solid var(--border);border-radius:8px;padding:6px;background:white;display:none}.role-grid{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:8px}.role-card{padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--panel3)}.role-card b{display:block;font-size:12px}.role-card small{color:var(--muted);font-size:10px}
+
+.qaqc-summary{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px;margin:14px 0}.qaqc-stat{border:1px solid var(--border);background:var(--panel3);border-radius:10px;padding:11px}.qaqc-stat b{display:block;font-size:22px}.qaqc-stat small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}.qaqc-list{display:grid;gap:8px;margin-top:10px}.qaqc-item{border:1px solid var(--border);border-left:4px solid #d1a64a;border-radius:9px;background:var(--panel3);padding:11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.qaqc-item.critical{border-left-color:#dc5b5b}.qaqc-item.warning{border-left-color:#d1a64a}.qaqc-item.passed{border-left-color:#43a66f}.qaqc-item.acknowledged{opacity:.64;border-left-color:#6f7d88}.qaqc-item h4{margin:0 0 4px;font-size:13px}.qaqc-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.45}.qaqc-loc{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--muted);margin-top:5px}.qaqc-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.qaqc-score{font-size:28px;font-weight:900}.qaqc-note{font-size:11px;color:var(--muted);line-height:1.5}.qaqc-sev{font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.qaqc-sev.critical{color:#ff9f9f}.qaqc-sev.warning{color:#ffd480}.qaqc-sev.passed{color:#8de0ad}
 @media(max-width:1100px){.app{grid-template-columns:200px minmax(0,1fr)}.main{padding:18px}.kpis{grid-template-columns:repeat(3,minmax(120px,1fr))!important}.split{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.filter-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}.role-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:760px){.report-launch{grid-template-columns:1fr;padding:14px}.report-launch .launch-actions{justify-content:stretch}.report-launch .launch-actions .btn{width:100%}.flow-steps{grid-template-columns:1fr 1fr}.mode-picker{grid-template-columns:1fr}.stack-meta{grid-template-columns:1fr}.stack-kpi-grid{grid-template-columns:1fr 1fr}.app{display:block}.sidebar{position:sticky;top:0;height:auto;border-right:0;border-bottom:1px solid var(--border);padding:9px 11px;background:rgba(9,14,18,.97);backdrop-filter:blur(10px)}.brand{margin:0}.mark{width:34px;height:34px;border-radius:9px}.brand small{display:none}.mobile-menu-btn{display:block}.workspace-chip,.demo-role,.nav,.side-note{display:none}.sidebar.open .workspace-chip,.sidebar.open .demo-role,.sidebar.open .nav{display:block}.sidebar.open .workspace-chip{margin-top:10px}.sidebar.open .nav{display:grid;grid-template-columns:1fr 1fr;gap:5px}.sidebar.open .nav .group{grid-column:1/-1;margin-top:9px}.main{padding:12px}.topbar{gap:10px;margin-bottom:12px}.title h2{font-size:21px}.title p{font-size:11px}.topbar>.actions{max-width:48%;justify-content:flex-end}.topbar>.actions .btn{flex:1 1 120px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}.kpi{padding:11px}.kpi .value{font-size:21px}.kpi .trend{display:none}.toolbar{padding:9px;gap:8px}.filter-details:not([open]) .filter-grid{display:none}.filter-grid{grid-template-columns:1fr 1fr;padding:0 9px 9px}.filter-grid .btn{width:100%}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.map-grid,.map-grid.three,.role-grid{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item .actions{display:grid;width:100%;max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:2px}.item .actions .btn{width:100%;white-space:normal;line-height:1.15}.report-preview{padding:12px;overflow:auto}.report-preview .summarygrid{grid-template-columns:1fr 1fr}.section-head .head-control{max-width:62%;justify-content:flex-end}.metric-select{max-width:145px}.section-head{padding:12px 12px 0}.section-body{padding:10px 12px 12px}.alerts{padding:10px 12px 12px}.chart-wrap{padding:7px 12px 16px}.modalbody{padding:12px}}
+@media(max-width:760px){.qaqc-summary{grid-template-columns:1fr 1fr}.qaqc-item{grid-template-columns:1fr}.qaqc-item .btn{width:100%}.report-launch{grid-template-columns:1fr;padding:14px}.report-launch .launch-actions{justify-content:stretch}.report-launch .launch-actions .btn{width:100%}.flow-steps{grid-template-columns:1fr 1fr}.mode-picker{grid-template-columns:1fr}.stack-meta{grid-template-columns:1fr}.stack-kpi-grid{grid-template-columns:1fr 1fr}.app{display:block}.sidebar{position:sticky;top:0;height:auto;border-right:0;border-bottom:1px solid var(--border);padding:9px 11px;background:rgba(9,14,18,.97);backdrop-filter:blur(10px)}.brand{margin:0}.mark{width:34px;height:34px;border-radius:9px}.brand small{display:none}.mobile-menu-btn{display:block}.workspace-chip,.demo-role,.nav,.side-note{display:none}.sidebar.open .workspace-chip,.sidebar.open .demo-role,.sidebar.open .nav{display:block}.sidebar.open .workspace-chip{margin-top:10px}.sidebar.open .nav{display:grid;grid-template-columns:1fr 1fr;gap:5px}.sidebar.open .nav .group{grid-column:1/-1;margin-top:9px}.main{padding:12px}.topbar{gap:10px;margin-bottom:12px}.title h2{font-size:21px}.title p{font-size:11px}.topbar>.actions{max-width:48%;justify-content:flex-end}.topbar>.actions .btn{flex:1 1 120px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}.kpi{padding:11px}.kpi .value{font-size:21px}.kpi .trend{display:none}.toolbar{padding:9px;gap:8px}.filter-details:not([open]) .filter-grid{display:none}.filter-grid{grid-template-columns:1fr 1fr;padding:0 9px 9px}.filter-grid .btn{width:100%}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.map-grid,.map-grid.three,.role-grid{grid-template-columns:1fr}.item{grid-template-columns:1fr}.item .actions{display:grid;width:100%;max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:2px}.item .actions .btn{width:100%;white-space:normal;line-height:1.15}.report-preview{padding:12px;overflow:auto}.report-preview .summarygrid{grid-template-columns:1fr 1fr}.section-head .head-control{max-width:62%;justify-content:flex-end}.metric-select{max-width:145px}.section-head{padding:12px 12px 0}.section-body{padding:10px 12px 12px}.alerts{padding:10px 12px 12px}.chart-wrap{padding:7px 12px 16px}.modalbody{padding:12px}}
 @media(max-width:480px){.topbar{display:block}.topbar>.actions{max-width:none;width:100%;margin-top:9px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.topbar>.actions .btn{width:100%;white-space:normal}.filter-grid{grid-template-columns:1fr}.item .actions{grid-template-columns:1fr 1fr}.btn{font-size:12px}.sidebar.open .nav{grid-template-columns:1fr 1fr}.role-grid{grid-template-columns:1fr 1fr}.report-preview .brandline{align-items:flex-start}.report-preview .statusstamp{font-size:9px}.table{min-width:760px}}
 @media print{body>*:not(#printSheet){display:none!important}#printSheet{display:block!important;background:white;color:black;padding:0}#printSheet .report-preview{box-shadow:none;border:0;border-radius:0;padding:0}#printSheet .no-print{display:none!important}@page{margin:12mm}}
 </style>
@@ -59,7 +53,7 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
     <button data-view="audit" data-admin-only>Activity Log</button>
     <button data-view="settings" data-admin-only>Company Settings</button>
   </div>
-  <div class="side-note">ReportFlow Pro v6.0 Demo<br>Local-first product demo. Cloud auth, tenant isolation, and automatic email delivery are backend-phase features.</div>
+  <div class="side-note">ReportFlow Pro v7.1 Demo<br>Local-first product demo. Cloud auth, tenant isolation, and automatic email delivery are backend-phase features.</div>
 </aside>
 <main class="main">
   <section class="view active" id="dashboard">
@@ -72,6 +66,7 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
       </div>
       <div class="launch-actions">
         <button class="btn primary" id="startStackReportDashboard">Create Preliminary Report</button>
+        <button class="btn" id="startQaqcDashboard">QA/QC Workbook</button>
         <button class="btn" id="viewStackReportsDashboard">View Saved Reports</button>
       </div>
     </div>
@@ -120,6 +115,7 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
     <div class="mode-picker">
       <button class="mode-card active" data-import-mode="general"><b>General Business Data</b><small>Projects, customers, status, dates, hours, financial values, and operational records.</small></button>
       <button class="mode-card" data-import-mode="stack"><b>Stack Test Workbook</b><small>Builds a client-facing PRELIMINARY report from Emissions and pollutant/RM-vs-CEMS worksheets, using however many runs were actually performed.</small></button>
+      <button class="mode-card" data-import-mode="qaqc"><b>QA/QC Workbook Check</b><small>Scans stack-test templates for missing recognized inputs, blank run data, leak checks, dates, temperatures, formula errors, and other review items before submittal.</small></button>
     </div>
 
     <div id="generalImportPanel">
@@ -156,10 +152,34 @@ button,input,select,textarea{font:inherit}button{touch-action:manipulation}.app{
       </div>
       <div class="card" style="margin-top:16px"><div class="section-head"><h3>Preliminary Report Scan</h3><span>Built for immediate client results</span></div><div class="section-body"><div class="pillrow"><span class="pill">Emissions worksheet</span><span class="pill">Actual Run 1–N</span><span class="pill">Run averages</span><span class="pill">Applicable standards</span><span class="pill">Pollutant worksheets</span><span class="pill">RM vs CEMS</span><span class="pill">Relative Accuracy</span><span class="pill">Bias</span><span class="pill">PASS / FAIL / REVIEW</span><span class="pill">PRELIMINARY PDF</span></div></div></div>
     </div>
+
+    <div id="qaqcImportPanel" style="display:none">
+      <div class="callout"><b>Pre-Submittal QA/QC:</b> Upload the completed Excel template. ReportFlow reads it only—it does <b>not</b> change the workbook. The checker flags recognized missing inputs and suspicious spreadsheet errors, then lets you acknowledge each finding while you correct the source workbook.</div>
+      <div class="card import-box">
+        <div class="drop"><h3>Upload Workbook for QA/QC</h3><p class="hint">Best results come from the actual completed field calculation workbook. The first rule set focuses on dates, run inputs, temperatures, leak checks, timing, pressure, and Excel formula errors.</p><input type="file" id="qaqcDataFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" /></div>
+        <div id="qaqcScanStatus" class="hint" style="margin-top:10px"></div>
+        <div id="qaqcReview" style="display:none">
+          <div class="qaqc-summary">
+            <div class="qaqc-stat"><small>QA/QC Score</small><b id="qaqcScore">—</b></div>
+            <div class="qaqc-stat"><small>Critical</small><b id="qaqcCritical">0</b></div>
+            <div class="qaqc-stat"><small>Warnings</small><b id="qaqcWarnings">0</b></div>
+            <div class="qaqc-stat"><small>Acknowledged</small><b id="qaqcAcknowledged">0</b></div>
+          </div>
+          <div class="qaqc-toolbar">
+            <select id="qaqcFilter"><option value="open">Open Findings</option><option value="all">All Findings</option><option value="critical">Critical Only</option><option value="warning">Warnings Only</option><option value="acknowledged">Acknowledged</option></select>
+            <button class="btn" id="qaqcAckWarnings">Acknowledge All Warnings</button>
+            <button class="btn" id="qaqcReset">Reset Check</button>
+          </div>
+          <div id="qaqcDetected" class="stack-sheet-pills"></div>
+          <div id="qaqcList" class="qaqc-list"></div>
+          <p class="qaqc-note"><b>Important:</b> Acknowledging a finding means “I saw this.” It does not convert missing data into a passing check. Correct the Excel workbook and upload it again to verify the issue is actually cleared. ReportFlow only calls something missing when it recognizes the field or run position with reasonable confidence; uncertain template-layout items are warnings, not automatic failures.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="view" id="stacktests">
-    <div class="topbar"><div class="title"><h2>Stack Test Reports</h2><p>Create and manage client-facing PRELIMINARY stack-test reports from field calculation workbooks.</p></div><div class="actions"><button class="btn primary" id="importStackTestBtn">Create Preliminary Report</button></div></div>
+    <div class="topbar"><div class="title"><h2>Stack Test Reports</h2><p>Create and manage client-facing PRELIMINARY stack-test reports from field calculation workbooks.</p></div><div class="actions"><button class="btn" id="qaqcStackTestBtn">QA/QC Workbook</button><button class="btn primary" id="importStackTestBtn">Create Preliminary Report</button></div></div>
     <div class="flow-steps">
       <div class="flow-step"><div class="num">1</div><b>Upload</b><small>Choose the stack-test workbook.</small></div>
       <div class="flow-step"><div class="num">2</div><b>Verify</b><small>Review Emissions and RM/CEMS results.</small></div>
@@ -238,7 +258,7 @@ const parseDate=v=>v?new Date(String(v).slice(0,10)+'T00:00:00'):null;
 const fmtDate=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString()};
 const fmtDateTime=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?String(v):d.toLocaleString()};
 function blankState(){return {version:1,company:{name:'Demo Company',workspaceId:'DEMO-001',reportTitle:'Management Performance Report',email:'ops@example.com',accent:'#d1a64a',logo:''},thresholds:{hours:80,revenue:2500,overdueEscalation:7},role:'Owner',data:[...sampleData],activeDatasetName:'Sample Operations',datasets:[],users:[{id:'u1',name:'Company Owner',email:'owner@example.com',role:'Owner',active:true},{id:'u2',name:'Operations Manager',email:'manager@example.com',role:'Manager',active:true},{id:'u3',name:'Reporting Analyst',email:'analyst@example.com',role:'Analyst',active:true}],templates:[{id:'tpl_exec',name:'Executive Summary',sections:['kpis','flags','trend','records'],description:'Leadership-ready KPI and exception summary.'},{id:'tpl_ops',name:'Operations Review',sections:['kpis','flags','records'],description:'Project and operational performance review.'}],reports:[],schedules:[],audit:[],customKpis:[],stackTests:[]}}
-let state=loadState(), filtered=[], rawRows=[], rawHeaders=[], currentSource='', importMode='general', stackWorkbook=[], stackDraft=null;
+let state=loadState(), filtered=[], rawRows=[], rawHeaders=[], currentSource='', importMode='general', stackWorkbook=[], stackDraft=null, qaqcWorkbook=[], qaqcDraft=null;
 function loadState(){try{return {...blankState(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return blankState()}}
 function saveState(){localStorage.setItem(KEY,JSON.stringify(state))}
 function audit(action,details=''){state.audit.unshift({id:uid('aud'),at:nowIso(),actor:state.role,action,details});state.audit=state.audit.slice(0,500);saveState();renderAudit()}
@@ -267,15 +287,19 @@ function renderCustomKpis(){$$('.kpi.custom').forEach(x=>x.remove());state.custo
 
 
 function setImportMode(mode){
-  importMode=mode==='stack'?'stack':'general';
+  importMode=['stack','qaqc'].includes(mode)?mode:'general';
   $$('[data-import-mode]').forEach(b=>b.classList.toggle('active',b.dataset.importMode===importMode));
   $('#generalImportPanel').style.display=importMode==='general'?'':'none';
   $('#stackImportPanel').style.display=importMode==='stack'?'':'none';
+  $('#qaqcImportPanel').style.display=importMode==='qaqc'?'':'none';
 }
 $$('[data-import-mode]').forEach(b=>b.onclick=()=>setImportMode(b.dataset.importMode));
 function openStackImport(){go('import');setImportMode('stack');setTimeout(()=>$('#stackDataFile')?.scrollIntoView({behavior:'smooth',block:'center'}),150)}
+function openQaqcImport(){go('import');setImportMode('qaqc');setTimeout(()=>$('#qaqcDataFile')?.scrollIntoView({behavior:'smooth',block:'center'}),150)}
 $('#importStackTestBtn').onclick=openStackImport;
+$('#qaqcStackTestBtn').onclick=openQaqcImport;
 $('#startStackReportDashboard').onclick=openStackImport;
+$('#startQaqcDashboard').onclick=openQaqcImport;
 $('#viewStackReportsDashboard').onclick=()=>go('stacktests');
 
 const cleanCell=v=>String(v??'').replace(/\s+/g,' ').trim();
@@ -522,13 +546,14 @@ function safeSheetRows(ws){
   range.e.r=Math.min(range.e.r||0,799); // first 800 rows per worksheet
   range.e.c=Math.min(range.e.c||0,79);  // first 80 columns (through CB)
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false,range});
-  return rows.map(row=>{
+  return rows.map((row,ri)=>{
     const a=Array.isArray(row)?row.slice(0,80):[];
     let last=a.length-1;while(last>=0&&!cleanCell(a[last]))last--;
-    return a.slice(0,last+1);
+    const trimmed=a.slice(0,last+1);trimmed._excelRow=(range.s.r||0)+ri+1;
+    return trimmed;
   }).filter(row=>row.some(c=>cleanCell(c)));
 }
-async function readStackWorkbookSafely(file){
+async function readStackWorkbookSafely(file,mode='stack'){
   const buffer=await file.arrayBuffer();
   // Avoid retaining formula/style metadata we do not need for preliminary reporting.
   const wb=XLSX.read(buffer,{type:'array',cellDates:false,cellStyles:false,cellHTML:false,cellNF:false,cellFormula:false});
@@ -540,7 +565,7 @@ async function readStackWorkbookSafely(file){
   const parsed=[];
   for(let i=0;i<ordered.length;i++){
     const name=ordered[i];
-    $('#stackScanStatus').textContent=`Reading worksheet ${i+1} of ${ordered.length}: ${name}...`;
+    const statusEl=mode==='qaqc'?$('#qaqcScanStatus'):$('#stackScanStatus');if(statusEl)statusEl.textContent=`Reading worksheet ${i+1} of ${ordered.length}: ${name}...`;
     // Give mobile browsers a chance to repaint between worksheets.
     if(i%2===0)await new Promise(r=>setTimeout(r,0));
     const rows=safeSheetRows(wb.Sheets[name]);
@@ -573,6 +598,95 @@ $('#stackDataFile').addEventListener('change',async e=>{
     $('#stackScanStatus').innerHTML=`<span style="color:#ffb4b4"><b>Workbook could not be scanned.</b> ${esc(err?.message||'Unknown import error')}</span>`;
   }
 });
+
+function qaExcelCol(ci){let n=ci+1,out='';while(n){const r=(n-1)%26;out=String.fromCharCode(65+r)+out;n=Math.floor((n-1)/26)}return out}
+function qaLocation(sheet,row,ci){const r=row?row._excelRow||'?' :'?';return `${sheet}!${qaExcelCol(Math.max(0,ci||0))}${r}`}
+const QA_FIELD_RULES=[
+  {id:'test-date',name:'Test date',severity:'critical',re:/(^|\b)(test date|date of test|testing date|run date)(\b|$)/i},
+  {id:'pre-leak',name:'Pre-test leak check',severity:'critical',re:/(pre.?test.*leak|pre.*leak check|initial.*leak|leak.*before)/i},
+  {id:'post-leak',name:'Post-test leak check',severity:'critical',re:/(post.?test.*leak|post.*leak check|final.*leak|leak.*after)/i},
+  {id:'stack-temp',name:'Stack / flue temperature',severity:'critical',re:/(stack|flue|duct).{0,18}(temp|temperature)|(temp|temperature).{0,18}(stack|flue|duct)/i},
+  {id:'meter-temp',name:'Meter temperature',severity:'warning',re:/(meter|dgm).{0,25}(temp|temperature)|(temp|temperature).{0,25}(meter|dgm)/i},
+  {id:'ambient-temp',name:'Ambient temperature',severity:'warning',re:/(ambient|outside).{0,18}(temp|temperature)|(temp|temperature).{0,18}(ambient|outside)/i},
+  {id:'baro',name:'Barometric pressure',severity:'warning',re:/(barometric pressure|barometer|baro\b)/i},
+  {id:'start-time',name:'Run start time',severity:'warning',re:/(run start|start time|begin time)/i},
+  {id:'stop-time',name:'Run stop time',severity:'warning',re:/(run stop|stop time|end time)/i},
+  {id:'vacuum',name:'Sampling vacuum',severity:'warning',re:/(vacuum|in\. ?hg)/i}
+];
+function qaMeaningful(v){const t=cleanCell(v);if(!t)return false;if(/^[-–—]+$/.test(t))return false;return true}
+function qaLikelyUnit(v){return /^(°?[fc]|deg\.? ?[fc]|in\.? ?hg|mm ?hg|cfm|lpm|psi|%|sec|seconds|min|minutes|hr|hrs|hours)$/i.test(cleanCell(v))}
+function qaFindNearbyValue(row,ci){
+  for(let j=ci+1;j<Math.min(row.length,ci+5);j++){const v=cleanCell(row[j]);if(!v||qaLikelyUnit(v))continue;if(QA_FIELD_RULES.some(r=>r.re.test(v)))break;return {value:v,ci:j}}
+  return null;
+}
+function qaAddIssue(list,issue,seen){const key=[issue.ruleId,issue.sheet,issue.location,issue.run||'',issue.title].join('|');if(seen.has(key))return;seen.add(key);list.push({...issue,id:'qa_'+Math.random().toString(36).slice(2,10),acknowledged:false})}
+function qaDetectedMethods(workbook){const text=workbook.map(sh=>sh.name+' '+sh.rows.slice(0,80).flat().map(cleanCell).join(' ')).join(' ');const hits=[];for(const m of ['1','2','3','4','5','6C','7E','10','17','19','20','23','25A','26A','29','201A','202','316','320']){const re=new RegExp(`(?:method|epa|m)\\s*[-#:]?\\s*${m.replace(/[A-Z]/g,x=>'\\s*'+x)}\\b`,'i');if(re.test(text))hits.push('Method '+m)}if(/\brata\b|relative accuracy/i.test(text))hits.push('RATA');return [...new Set(hits)]}
+function runQaqcScan(workbook,fileName){
+  const issues=[],seen=new Set(),foundRules=new Set(),formulaErrors=[];
+  for(const sh of workbook){
+    const rows=sh.rows;
+    for(let ri=0;ri<rows.length;ri++){
+      const row=rows[ri];
+      for(let ci=0;ci<row.length;ci++){
+        const raw=cleanCell(row[ci]),norm=normCell(raw);if(!raw)continue;
+        if(/^#(REF!|DIV\/0!|VALUE!|N\/A|NAME\?|NUM!|NULL!)/i.test(raw))formulaErrors.push({sheet:sh.name,row,ci,value:raw});
+        for(const rule of QA_FIELD_RULES){
+          if(!rule.re.test(norm))continue;foundRules.add(rule.id);
+          const near=qaFindNearbyValue(row,ci);
+          if(!near)qaAddIssue(issues,{ruleId:rule.id,title:`Missing ${rule.name}`,detail:`ReportFlow recognized the ${rule.name.toLowerCase()} field but did not find an entered value beside it.`,severity:rule.severity,sheet:sh.name,location:qaLocation(sh.name,row,ci)},seen);
+        }
+      }
+      // Run-column check: identify a row containing two or more Run 1..N headers.
+      const runCols=row.map((v,ci)=>({ci,n:runNumber(v),label:runLabelFromHeader(v)})).filter(x=>x.n!==null&&x.label);
+      if(runCols.length>=2){
+        for(let rj=ri+1;rj<Math.min(rows.length,ri+90);rj++){
+          const rr=rows[rj];if(!rr?.length)continue;
+          let matched=null,labelCi=-1;
+          for(let ci=0;ci<Math.min(rr.length,runCols[0].ci+1);ci++){const t=normCell(rr[ci]);matched=QA_FIELD_RULES.find(rule=>rule.re.test(t));if(matched){labelCi=ci;break}}
+          if(!matched)continue;foundRules.add(matched.id);
+          for(const rc of runCols){
+            if(!qaMeaningful(rr[rc.ci]))qaAddIssue(issues,{ruleId:matched.id,title:`Missing ${matched.name} — ${rc.label}`,detail:`The ${matched.name.toLowerCase()} row was recognized, but ${rc.label} is blank.`,severity:matched.severity,sheet:sh.name,location:qaLocation(sh.name,rr,rc.ci),run:rc.label},seen);
+          }
+        }
+      }
+    }
+  }
+  for(const e of formulaErrors)qaAddIssue(issues,{ruleId:'formula-error',title:`Excel formula error: ${e.value}`,detail:'A spreadsheet error value was found. Review the source formula before the workbook is submitted.',severity:'critical',sheet:e.sheet,location:qaLocation(e.sheet,e.row,e.ci)},seen);
+  const methods=qaDetectedMethods(workbook);
+  const allText=workbook.map(sh=>sh.rows.flat().map(normCell).join(' ')).join(' ');
+  const isoLikely=methods.some(m=>/^Method (5|17|23|26A|29)$/.test(m));
+  if(isoLikely&&!/(leak check|leak rate|pre.?test.*leak|post.?test.*leak)/i.test(allText))qaAddIssue(issues,{ruleId:'leak-layout',title:'Leak-check fields not located',detail:'This appears to include an isokinetic method, but ReportFlow could not confidently locate leak-check fields. Confirm the template contains the required pre/post leak-check information.',severity:'warning',sheet:'Workbook',location:'Layout review'},seen);
+  const metadata=[
+    ['client','Client / customer',/(^|\b)(client|customer)(\b|$)/i,'warning'],
+    ['facility','Facility / plant',/(^|\b)(facility|plant|site)(\b|$)/i,'warning'],
+    ['source','Source / unit',/(source|emission unit|stack id|unit id)/i,'warning'],
+    ['project','Project / job number',/(project number|project #|job number|job #)/i,'warning'],
+    ['test-date-layout','Test date',/(test date|date of test|testing date)/i,'critical']
+  ];
+  for(const [id,name,re,severity] of metadata){if(!re.test(allText))qaAddIssue(issues,{ruleId:id,title:`${name} field not located`,detail:`ReportFlow could not confidently locate a ${name.toLowerCase()} field anywhere in the scanned workbook. Confirm it is present and completed before submittal.`,severity,sheet:'Workbook',location:'Layout review'},seen)}
+  const passed=[];
+  for(const rule of QA_FIELD_RULES){if(foundRules.has(rule.id)&&!issues.some(i=>i.ruleId===rule.id))passed.push({id:'pass_'+rule.id,title:`${rule.name} entries found`,severity:'passed',detail:'Recognized entries were populated in the scanned areas.',sheet:'Workbook',location:'Recognized fields',acknowledged:false})}
+  if(!formulaErrors.length)passed.push({id:'pass_formula',title:'No visible Excel formula errors found',severity:'passed',detail:'No #REF!, #DIV/0!, #VALUE!, #N/A, #NAME?, #NUM!, or #NULL! values were found in the scanned range.',sheet:'Workbook',location:'Scanned cells',acknowledged:false});
+  const totalChecks=Math.max(1,issues.length+passed.length),openCritical=issues.filter(i=>i.severity==='critical').length,openWarnings=issues.filter(i=>i.severity==='warning').length,score=Math.max(0,Math.round((passed.length+openWarnings*.25)/totalChecks*100));
+  return {fileName,createdAt:nowIso(),issues,passed,methods,sheets:workbook.map(x=>x.name),score};
+}
+function renderQaqc(){
+  if(!qaqcDraft)return;$('#qaqcReview').style.display='block';
+  const issues=qaqcDraft.issues||[],ack=issues.filter(i=>i.acknowledged).length,critical=issues.filter(i=>!i.acknowledged&&i.severity==='critical').length,warnings=issues.filter(i=>!i.acknowledged&&i.severity==='warning').length;
+  $('#qaqcScore').textContent=qaqcDraft.score+'%';$('#qaqcCritical').textContent=critical;$('#qaqcWarnings').textContent=warnings;$('#qaqcAcknowledged').textContent=ack;
+  const pills=[...(qaqcDraft.methods||[]),...(qaqcDraft.sheets||[]).slice(0,12).map(x=>'Sheet: '+x)];$('#qaqcDetected').innerHTML=pills.map(x=>`<span class="pill">${esc(x)}</span>`).join('');
+  const filter=$('#qaqcFilter').value;let rows=[...issues,...(qaqcDraft.passed||[])];
+  if(filter==='open')rows=rows.filter(x=>x.severity!=='passed'&&!x.acknowledged);else if(filter==='critical')rows=rows.filter(x=>x.severity==='critical'&&!x.acknowledged);else if(filter==='warning')rows=rows.filter(x=>x.severity==='warning'&&!x.acknowledged);else if(filter==='acknowledged')rows=rows.filter(x=>x.acknowledged);
+  $('#qaqcList').innerHTML=rows.length?rows.map(x=>`<div class="qaqc-item ${esc(x.severity)} ${x.acknowledged?'acknowledged':''}"><div><div class="qaqc-sev ${esc(x.severity)}">${x.acknowledged?'ACKNOWLEDGED':esc(x.severity)}</div><h4>${esc(x.title)}</h4><p>${esc(x.detail||'')}</p><div class="qaqc-loc">${esc(x.location||'')} ${x.sheet&&x.location!=='Layout review'?'• '+esc(x.sheet):''}</div></div>${x.severity==='passed'?'':`<button class="btn mini" data-qa-ack="${esc(x.id)}">${x.acknowledged?'Unacknowledge':'Acknowledge'}</button>`}</div>`).join(''):'<div class="qaqc-item passed"><div><div class="qaqc-sev passed">CLEAR</div><h4>No findings in this view</h4><p>Change the filter or re-upload the workbook after making corrections.</p></div></div>';
+  $$('[data-qa-ack]').forEach(b=>b.onclick=()=>{const i=qaqcDraft.issues.find(x=>x.id===b.dataset.qaAck);if(i){i.acknowledged=!i.acknowledged;renderQaqc()}});
+}
+function resetQaqc(){qaqcWorkbook=[];qaqcDraft=null;$('#qaqcDataFile').value='';$('#qaqcReview').style.display='none';$('#qaqcScanStatus').textContent=''}
+$('#qaqcReset').onclick=resetQaqc;$('#qaqcFilter').onchange=renderQaqc;$('#qaqcAckWarnings').onclick=()=>{if(!qaqcDraft)return;qaqcDraft.issues.filter(x=>x.severity==='warning').forEach(x=>x.acknowledged=true);renderQaqc();toast('Warnings acknowledged — correct the workbook and re-upload to clear them')};
+$('#qaqcDataFile').addEventListener('change',async e=>{
+  if(!roleCan('data')){e.target.value='';return toast('Data write access required')}const f=e.target.files[0];if(!f)return;
+  try{$('#qaqcReview').style.display='none';$('#qaqcScanStatus').textContent='Opening workbook for QA/QC...';if(!(await ensureXlsx()))throw new Error('Excel reader could not load. Check your internet connection and try again.');await new Promise(r=>setTimeout(r,40));const loaded=await readStackWorkbookSafely(f,'qaqc');qaqcWorkbook=loaded.parsed;if(!qaqcWorkbook.length)throw new Error('No readable worksheet data was found in this workbook.');$('#qaqcScanStatus').textContent='Checking recognized required fields and spreadsheet errors...';await new Promise(r=>setTimeout(r,20));qaqcDraft=runQaqcScan(qaqcWorkbook,f.name);const c=qaqcDraft.issues.filter(x=>x.severity==='critical').length,w=qaqcDraft.issues.filter(x=>x.severity==='warning').length;$('#qaqcScanStatus').textContent=`QA/QC scan complete • ${loaded.total} worksheet${loaded.total===1?'':'s'} • ${c} critical • ${w} warning${w===1?'':'s'} • ${qaqcDraft.passed.length} recognized checks passed.`;renderQaqc();$('#qaqcReview').scrollIntoView({behavior:'smooth',block:'start'});audit('QA/QC workbook scan',`${f.name} • ${c} critical • ${w} warnings`)}catch(err){console.error('QA/QC workbook scan failed',err);$('#qaqcReview').style.display='none';$('#qaqcScanStatus').innerHTML=`<span style="color:#ffb4b4"><b>Workbook could not be scanned.</b> ${esc(err?.message||'Unknown import error')}</span>`}
+});
+
 function preliminaryOverallStatus(t){
   const statuses=[...(t.results||[]).map(r=>r.status),...(t.cemsComparisons||[]).map(c=>c.status)];
   if(statuses.includes('FAIL'))return 'FAIL';
@@ -666,16 +780,6 @@ function renderCustomKpiSettings(){$('#customKpiList').innerHTML=state.customKpi
 $('#newReportBtn').dataset.writeReport='';$('#newTemplateBtn').dataset.writeReport='';$('#newScheduleBtn').dataset.writeReport='';
 function init(){document.documentElement.style.setProperty('--accent',state.company.accent||'#d1a64a');const fd=$('#filterDetails');if(fd&&window.innerWidth<=760)fd.open=false;refreshCustomers();applyFilters();renderReports();renderStackTests();renderDatasets();renderUsers();renderAudit();renderSchedules();renderSettings();enforceRole();setImportMode('general');if(!state.audit.length)audit('ReportFlow Pro v7 initialized','Local demo workspace ready')}
 init();
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
-      .then(() => console.log('ReportFlow service worker registered'))
-      .catch(err => console.error('ReportFlow service worker registration failed:', err));
-  });
-}
 </script>
 </body>
 </html>
