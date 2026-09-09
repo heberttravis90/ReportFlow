@@ -1,37 +1,70 @@
-const CACHE_NAME = 'reportflow-v1';
-const APP_SHELL = [
+const CACHE_NAME = 'reportflow-v3-20260909';
+
+const CORE_SHELL = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png'
+  './site.webmanifest'
+];
+
+const OPTIONAL_ASSETS = [
+  './favicon.ico',
+  './apple-touch-icon.png',
+  './icon-32x32.png',
+  './icon-192x192.png',
+  './icon-512x512.png',
+  './maskable-icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CORE_SHELL);
+    await Promise.allSettled(
+      OPTIONAL_ASSETS.map(asset => cache.add(asset))
+    );
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(key => key.startsWith('reportflow-') && key !== CACHE_NAME)
+        .map(key => caches.delete(key))
+    );
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() => caches.match(event.request).then(r => r || caches.match('./index.html')))
-  );
+
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+
+      if (
+        response &&
+        response.ok &&
+        event.request.url.startsWith(self.location.origin)
+      ) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, response.clone());
+      }
+
+      return response;
+    } catch (error) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+
+      if (event.request.mode === 'navigate') {
+        const fallback = await caches.match('./index.html');
+        if (fallback) return fallback;
+      }
+
+      throw error;
+    }
+  })());
 });
