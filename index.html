@@ -132,7 +132,7 @@ body{background:
     <button data-view="audit" data-admin-only>Activity Log</button>
     <button data-view="settings" data-admin-only>Company Settings</button>
   </div>
-  <div class="side-note">ReportFlow Pro v8.4<br>Multi-industry reporting and QA/QC platform.</div>
+  <div class="side-note">ReportFlow Pro v8.5<br>Multi-industry reporting and QA/QC platform.</div>
 </aside>
 <main class="main">
   <div class="workspace-switcher" id="workspaceSwitcher">
@@ -300,12 +300,7 @@ body{background:
   </section>
 
   <section class="view" id="profiles">
-    <div class="topbar"><div class="title"><h2>Industry Workspaces</h2><p>Switch industries with the arrows or dropdown. Each workspace only shows the reporting, QA/QC, and operational tools that belong to that industry.</p></div></div>
-    <div class="card industry-workspace-nav">
-      <button class="switch-arrow" id="industryPrevWorkspace" aria-label="Previous industry">‹</button>
-      <div class="industry-workspace-center"><small>Industry Workspace</small><select id="industrySelectWorkspace" aria-label="Select industry"></select><div class="industry-position" id="industryPosition"></div></div>
-      <button class="switch-arrow" id="industryNextWorkspace" aria-label="Next industry">›</button>
-    </div>
+    <div class="topbar"><div class="title"><h2>Industry Workspaces</h2><p>Use the Current Industry Workspace selector above to switch industries. This page shows only the reporting, QA/QC, and operational tools for the selected industry.</p></div></div>
     <div id="industryContent"></div>
     <div class="card" style="margin-top:16px"><div class="section-head"><h3>Recent Profile Detections</h3><span>Last 12 uploads</span></div><div class="section-body"><div id="profileHistory" class="profile-list"></div></div></div>
   </section>
@@ -449,10 +444,6 @@ function renderProfiles(){
   const selected=state.profileSettings?.preferredIndustry||'auto';
   const id=activeIndustryId(),p=industryDef(id),content=$('#industryContent');
   if(!content)return;
-  const select=$('#industrySelectWorkspace');if(select){select.innerHTML=industryOptionsHtml(id);select.value=id;select.onchange=e=>setActiveIndustry(e.target.value,false)}
-  const pos=$('#industryPosition');if(pos)pos.textContent=`${INDUSTRY_ORDER.indexOf(id)+1} of ${INDUSTRY_ORDER.length} • ${p.status}`;
-  const prev=$('#industryPrevWorkspace');if(prev)prev.onclick=()=>stepIndustry(-1,false);
-  const next=$('#industryNextWorkspace');if(next)next.onclick=()=>stepIndustry(1,false);
   syncIndustryChrome();
   if(id==='environmental'){
     content.innerHTML=`<div class="card industry-hero"><span class="industry-status">Production</span><h3>Environmental Compliance / Stack Testing</h3><p>This is ReportFlow's fully tuned environmental workspace. Everything already built for Environmental stays here: preliminary client reporting, completed-work workbook QA/QC, permit/test-plan QA comparison, stack-test report storage, and the existing method-aware environmental logic.</p><div class="industry-profile-list">${p.profiles.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div></div><div class="industry-tools"><div class="industry-tool featured"><div class="tool-kicker">Client deliverable</div><h4>Preliminary Stack Test Report</h4><p>Upload the completed field calculation workbook, detect the active test configuration, review Emissions and RM/CEMS results, then create the clean PRELIMINARY client report already built into ReportFlow.</p><button class="btn primary" id="industryPrelim">Create Preliminary Report</button></div><div class="industry-tool"><div class="tool-kicker">Completed-work QA</div><h4>QA/QC Workbook</h4><p>Run the existing method-aware workbook review for active runs, calibration records, bias inputs, spreadsheet errors, RATA fields, isokinetic data, and recognized stack-test QA requirements.</p><button class="btn" id="industryWorkbookQa">Run Workbook QA/QC</button></div><div class="industry-tool"><div class="tool-kicker">Permit + test plan + completed work</div><h4>QA Compare</h4><p>Build a traceable requirement matrix from the permit and approved test plan, compare it against the completed report/work package and field calculations, and hold unresolved requirements for reviewer action.</p><button class="btn green" id="industryQaCompare">Open QA Compare</button></div><div class="industry-tool"><div class="tool-kicker">Saved environmental work</div><h4>Stack Test Reports</h4><p>Open the existing saved preliminary stack-test reports and environmental report workflow without mixing them into other industries.</p><button class="btn" id="industrySavedStack">View Stack Test Reports</button></div></div>`;
