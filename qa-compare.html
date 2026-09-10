@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReportFlow Pro — QA Compare</title>
+<link rel="icon" href="./favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192x192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#071019">
+<style>
+:root{--bg:#071019;--panel:#0d1823;--panel2:#122130;--panel3:#09141e;--text:#f5f9fc;--muted:#91a4b4;--accent:#2dd4bf;--blue:#4f8cff;--danger:#e2646c;--warn:#e4b35f;--border:#1e3446;--ok:#63d6ab;--radius:14px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.42}
+button,input,select,textarea{font:inherit}.shell{max-width:1540px;margin:auto;padding:18px}.top{display:flex;gap:14px;justify-content:space-between;align-items:center;margin-bottom:16px}.brand{display:flex;gap:11px;align-items:center}.brand img{width:46px;height:46px;border-radius:12px}.brand h1{font-size:20px;margin:0}.brand small,.muted{color:var(--muted)}.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 12px;min-height:38px;border-radius:9px;font-weight:760;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn:hover{filter:brightness(1.08)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#071019;font-weight:900}.btn.blue{background:var(--blue);border-color:var(--blue);color:white}.btn.danger{border-color:#733d43;color:#ffadb2}.btn:disabled{opacity:.42;cursor:not-allowed}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}.section{padding:15px}.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(290px,.6fr);gap:14px;margin-bottom:14px}.hero-main{padding:20px}.eyebrow{color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}.hero h2{font-size:27px;letter-spacing:-.03em;margin:5px 0 7px}.hero p{color:var(--muted);font-size:13px;margin:0;max-width:820px}.guardrail{padding:18px;border-left:3px solid var(--warn);background:rgba(228,179,95,.06)}.guardrail b{display:block;margin-bottom:5px}.guardrail small{color:var(--muted);line-height:1.5}
+.file-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.file-card{padding:13px}.file-card h3{font-size:13px;margin:0 0 4px}.file-card p{font-size:10px;color:var(--muted);margin:0 0 10px;min-height:30px}.drop{border:1.5px dashed #3a5365;background:var(--panel3);border-radius:10px;padding:13px;display:grid;gap:8px}.drop input{width:100%;font-size:10px}.file-status{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.file-status.good{color:var(--ok)}.file-status.bad{color:#ff9da3}
+.runbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:13px 15px;margin-bottom:14px}.runbar .left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.runbar small{color:var(--muted)}.pill{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:9px;color:var(--muted);background:var(--panel3)}
+.status-banner{display:none;padding:15px 17px;margin-bottom:14px;border-left:4px solid var(--warn)}.status-banner.show{display:block}.status-banner.hold{border-left-color:var(--danger);background:rgba(226,100,108,.06)}.status-banner.ready{border-left-color:var(--ok);background:rgba(99,214,171,.06)}.status-banner h3{margin:0 0 3px;font-size:17px}.status-banner p{margin:0;color:var(--muted);font-size:11px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(110px,1fr));gap:9px;margin-bottom:14px}.kpi{padding:12px}.kpi small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em}.kpi b{font-size:22px;display:block;margin-top:4px}.kpi.critical b{color:#ff9da3}.kpi.major b{color:#ffc975}.kpi.review b{color:#d6b8ff}.kpi.ok b{color:var(--ok)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:9px;border-bottom:1px solid var(--border);background:#0a121a}.tab{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800;cursor:pointer}.tab.active{border-color:var(--border);background:var(--panel2);color:var(--text)}
+.panel{display:none}.panel.active{display:block}.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) repeat(2,minmax(130px,.35fr)) auto;gap:8px;padding:12px;border-bottom:1px solid var(--border)}.toolbar input,.toolbar select,.resolution,.notes{width:100%;background:var(--panel3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-size:10px}
+.table-scroll{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:1180px}.table th,.table td{border-bottom:1px solid var(--border);padding:9px 10px;text-align:left;vertical-align:top;font-size:10px}.table th{position:sticky;top:0;background:#0f1821;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em;z-index:1}.table tr:hover td{background:rgba(255,255,255,.015)}
+.badge{display:inline-flex;border:1px solid currentColor;border-radius:999px;padding:3px 7px;font-size:8px;font-weight:900;letter-spacing:.04em;white-space:nowrap}.badge.critical{color:#ff9da3}.badge.major{color:#ffc975}.badge.review{color:#d6b8ff}.badge.verified{color:var(--ok)}.badge.info{color:#8ab7ff}.badge.resolved{color:#7bd7b6}
+.req{font-weight:750;font-size:10.5px;max-width:430px}.src{color:var(--muted);font-size:8.5px;margin-top:4px}.evidence{max-width:360px;color:#c7d3db}.evidence b{color:var(--text)}.evidence.none{color:#ff9da3}.notes{min-width:190px;min-height:56px;resize:vertical}.resolution{min-width:160px}
+.list{display:grid;gap:8px;padding:12px}.gate{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;border:1px solid var(--border);border-radius:10px;padding:11px;background:var(--panel3)}.gate b{font-size:11px}.gate .meta{font-size:9px;color:var(--muted);margin-top:3px}.gate .right{text-align:right}.gate .right small{display:block;color:var(--muted);margin-top:3px}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:12px}.footer-actions{display:flex;gap:8px;flex-wrap:wrap;padding:13px;border-top:1px solid var(--border)}.complete-box{margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--panel3)}.complete-box h3{margin:0 0 5px;font-size:14px}.complete-box p{font-size:10px;color:var(--muted);margin:0 0 10px}
+.manual-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px}.manual{border:1px solid var(--border);border-radius:10px;background:var(--panel3);padding:11px}.manual label{display:flex;gap:8px;align-items:flex-start;font-size:10px}.manual input{margin-top:2px}.manual small{display:block;color:var(--muted);font-size:8.5px;margin:5px 0 0 22px}
+@media(max-width:1100px){.file-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}.hero{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:span 2}}
+@media(max-width:650px){.shell{padding:10px}.top{align-items:flex-start}.brand h1{font-size:17px}.file-grid,.kpis,.manual-checks{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.toolbar input{grid-column:auto}.hero h2{font-size:23px}.top-actions{justify-content:flex-end}.btn{font-size:10px;padding:8px 9px}}
+@media print{body{background:white;color:#15242e}.top,.file-grid,.runbar,.tabs,.toolbar,.footer-actions,.complete-box .btn{display:none!important}.shell{max-width:none;padding:0}.card,.status-banner,.kpi{border-color:#cfd9de;background:white;color:#15242e}.panel{display:block!important}.panel:not(#exceptionsPanel){display:none!important}.table{min-width:0}.table th{position:static;background:#eef4f6;color:#4f626d}.table td,.table th{border-color:#dbe4e8}.muted,.src,.status-banner p{color:#60727d}.notes,.resolution{border:0;background:transparent;color:#15242e;padding:0}.status-banner{display:block!important}}
+body.embed-mode .top{display:none} body.embed-mode .shell{max-width:none;padding:12px} body.embed-mode .hero{margin-top:0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+</head>
+<body>
+<script>if(new URLSearchParams(location.search).get('embed')==='1')document.body.classList.add('embed-mode');</script>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><img src="./icon-192x192.png" alt=""><div><h1>ReportFlow Pro</h1><small>QA Compare • Compliance review workspace</small></div></div>
+    <div class="top-actions"><a class="btn" href="./">← ReportFlow</a><button class="btn" id="printBtn">Print QA Record</button><button class="btn" id="exportBtn">Export CSV</button></div>
+  </div>
+
+  <div class="hero">
+    <div class="card hero-main">
+      <div class="eyebrow">Pre-submittal QA gate</div>
+      <h2>Permit → Test Plan → Completed Work</h2>
+      <p>Build a traceable requirement matrix, compare the approved basis to what was actually completed, run method-specific evidence gates, surface spreadsheet errors, and hold QA open until every unresolved item is reviewed.</p>
+    </div>
+    <div class="card guardrail"><b>No silent pass.</b><small>If ReportFlow cannot prove a requirement from the uploaded evidence, it stays open. Scanned PDFs, ambiguous language, unmatched numbers, and missing documentation are review items—not automatic approvals.</small></div>
+  </div>
+
+  <div class="file-grid">
+    <div class="card file-card">
+      <h3>1. Permit / Regulatory Basis</h3><p>Permit, permit conditions, consent order, or regulatory requirement document.</p>
+      <div class="drop"><input type="file" id="permitFile" accept=".pdf,.docx,.txt,.csv"><div class="file-status" id="permitStatus">Required</div></div>
+    </div>
+    <div class="card file-card">
+      <h3>2. Approved Test Plan / Protocol</h3><p>Approved test plan, protocol, agency approval, and approved deviations.</p>
+      <div class="drop"><input type="file" id="planFile" accept=".pdf,.docx,.txt,.csv"><div class="file-status" id="planStatus">Required</div></div>
+    </div>
+    <div class="card file-card">
+      <h3>3. Completed Report / Work Package</h3><p>Draft/final report, field package, recovery sheets, COC, lab report, or supporting PDFs.</p>
+      <div class="drop"><input type="file" id="workFiles" multiple accept=".pdf,.docx,.txt,.csv"><div class="file-status" id="workStatus">At least one required</div></div>
+    </div>
+    <div class="card file-card">
+      <h3>4. Field Data / Calculations</h3><p>Excel/CSV field calculations, RATA sheets, emissions workbooks, and calculation support.</p>
+      <div class="drop"><input type="file" id="dataFiles" multiple accept=".xlsx,.xls,.csv,.txt,.pdf"><div class="file-status" id="dataStatus">Recommended for deep QA</div></div>
+    </div>
+  </div>
+
+  <div class="card runbar">
+    <div class="left"><button class="btn primary" id="runBtn" disabled>Run QA Comparison</button><button class="btn danger" id="resetBtn">Reset</button><small id="runHint">Load permit, test plan, and completed work first.</small></div>
+    <div id="detectedPills" class="left"></div>
+  </div>
+
+  <div class="card status-banner" id="statusBanner"><h3 id="qaStatus">QA STATUS: NOT RUN</h3><p id="qaStatusDetail"></p></div>
+
+  <div class="kpis" id="kpis" style="display:none">
+    <div class="card kpi"><small>Requirements</small><b id="kReq">0</b></div>
+    <div class="card kpi critical"><small>Critical</small><b id="kCritical">0</b></div>
+    <div class="card kpi major"><small>Major</small><b id="kMajor">0</b></div>
+    <div class="card kpi review"><small>Review</small><b id="kReview">0</b></div>
+    <div class="card kpi ok"><small>Verified / Resolved</small><b id="kVerified">0</b></div>
+    <div class="card kpi"><small>Coverage</small><b id="kCoverage">0%</b></div>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none">
+    <div class="tabs">
+      <button class="tab active" data-panel="exceptionsPanel">Requirement Matrix</button>
+      <button class="tab" data-panel="methodsPanel">Method Gates</button>
+      <button class="tab" data-panel="integrityPanel">Document / Workbook Integrity</button>
+      <button class="tab" data-panel="manualPanel">Final Manual Gate</button>
+    </div>
+
+    <div class="panel active" id="exceptionsPanel">
+      <div class="toolbar">
+        <input id="search" placeholder="Search requirement, method, pollutant, source...">
+        <select id="statusFilter"><option value="open">Open / unresolved</option><option value="all">All</option><option value="critical">Critical</option><option value="major">Major</option><option value="review">Review</option><option value="verified">Verified / resolved</option></select>
+        <select id="typeFilter"><option value="">All requirement types</option></select>
+        <button class="btn" id="clearFilters">Clear</button>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead><tr><th>Severity</th><th>Requirement</th><th>Test Plan Evidence</th><th>Completed-Work Evidence</th><th>Resolution</th><th>Reviewer Notes</th></tr></thead>
+          <tbody id="reqBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="methodsPanel"><div class="list" id="methodList"></div></div>
+    <div class="panel" id="integrityPanel"><div class="list" id="integrityList"></div></div>
+    <div class="panel" id="manualPanel">
+      <div class="manual-checks" id="manualChecks"></div>
+      <div class="footer-actions"><button class="btn" id="checkAllManual">Check all</button><button class="btn" id="uncheckAllManual">Clear all</button></div>
+    </div>
+
+    <div class="complete-box">
+      <h3>Final QA Gate</h3>
+      <p>QA Complete stays locked while any requirement is open, any method/integrity gate is unresolved, or the final manual review is incomplete. Reviewer resolutions are recorded in the exported QA record.</p>
+      <div class="top-actions"><button class="btn blue" id="completeBtn" disabled>Mark QA Complete</button><span class="muted" id="completeHint"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const norm=v=>String(v??'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').replace(/\r/g,'').trim();
+const lower=v=>norm(v).toLowerCase();
+const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+let files={permit:null,plan:null,work:[],data:[]}, parsed={permit:null,plan:null,work:[],data:[]}, analysis=null;
+
+const METHOD_PATTERNS=[
+  ['Method 1',/\bmethod\s*1\b|\bm[- ]?1\b/i],['Method 2',/\bmethod\s*2\b|\bm[- ]?2\b/i],['Method 3A',/\bmethod\s*3a\b|\bm[- ]?3a\b/i],['Method 4',/\bmethod\s*4\b|\bm[- ]?4\b/i],
+  ['Method 5B',/\bmethod\s*5b\b|\bm[- ]?5b\b/i],['Method 5',/\bmethod\s*5(?!b)\b|\bm[- ]?5\b/i],['Method 6C',/\bmethod\s*6c\b|\bm[- ]?6c\b/i],['Method 7E',/\bmethod\s*7e\b|\bm[- ]?7e\b/i],
+  ['Method 10B',/\bmethod\s*10b\b|\bm[- ]?10b\b/i],['Method 10',/\bmethod\s*10(?!b)\b|\bm[- ]?10\b/i],['Method 16C',/\bmethod\s*16c\b|\bm[- ]?16c\b/i],['Method 17',/\bmethod\s*17\b|\bm[- ]?17\b/i],
+  ['Method 19',/\bmethod\s*19\b|\bm[- ]?19\b/i],['Method 23',/\bmethod\s*23\b|\bm[- ]?23\b/i],['Method 25A',/\bmethod\s*25a\b|\bm[- ]?25a\b/i],['Method 26A',/\bmethod\s*26a\b|\bm[- ]?26a\b/i],
+  ['Method 29',/\bmethod\s*29\b|\bm[- ]?29\b/i],['Method 30B',/\bmethod\s*30b\b|\bm[- ]?30b\b/i],['Method 201A',/\bmethod\s*201a\b/i],['Method 202',/\bmethod\s*202\b/i],['Method 205',/\bmethod\s*205\b/i],['Method 320',/\bmethod\s*320\b/i],
+  ['PS 2',/\bps[- ]?2\b|performance specification\s*2\b/i],['PS 3',/\bps[- ]?3\b|performance specification\s*3\b/i],['PS 4A',/\bps[- ]?4a\b|performance specification\s*4a\b/i],['PS 4',/\bps[- ]?4(?!a)\b|performance specification\s*4\b/i],
+  ['PS 5',/\bps[- ]?5\b|performance specification\s*5\b/i],['PS 6',/\bps[- ]?6\b|performance specification\s*6\b/i],['PS 7',/\bps[- ]?7\b|performance specification\s*7\b/i],['PS 8',/\bps[- ]?8\b|performance specification\s*8\b/i],['PS 15',/\bps[- ]?15\b|performance specification\s*15\b/i]
+];
+const POLLUTANTS=[
+ ['NOx',/\bno[xₓ]\b|nitrogen oxides?/i],['SO2',/\bso2\b|sulfur dioxide/i],['CO',/\bcarbon monoxide\b|\bco\b/i],['CO2',/\bcarbon dioxide\b|\bco2\b/i],['O2',/\boxygen\b|\bo2\b/i],
+ ['PM',/\bparticulate matter\b|\bpm\b/i],['PM10',/\bpm10\b/i],['PM2.5',/\bpm2\.?5\b/i],['VOC',/\bvoc\b|volatile organic compounds?/i],['THC',/\bthc\b|total hydrocarbons?/i],
+ ['HCl',/\bhcl\b|hydrogen chloride/i],['HF',/\bhf\b|hydrogen fluoride/i],['H2S',/\bh2s\b|hydrogen sulfide/i],['TRS',/\btrs\b|total reduced sulfur/i],['Hg',/\bmercury\b|\bhg\b/i],
+ ['Metals',/\bmetals?\b|\bmethod\s*29\b/i],['Dioxins/Furans',/\bdioxin|furan|pcdd|pcdf/i]
+];
+const REQUIREMENT_RE=/\b(shall|must|required|requirement|required to|not exceed|no more than|at least|minimum|maximum|each run|per run|three runs|3 runs|test run|sampling run|operate|operating|load|capacity|permit limit|emission limit|standard|correct(?:ed)? to|oxygen basis|dry basis|wet basis|calibration|bias|drift|leak check|traverse|sampling location|sample volume|chain of custody|quality control|qa\/qc|blank|recovery|report shall|submit|notification|approved test plan|performance specification)\b/i;
+const STOPWORDS=new Set('the a an and or of to in for with from by as at on is are be shall must this that these those each per during under over into using use used applicable source test testing method permit plan report run runs emissions emission requirement required data results result condition conditions section part subpart'.split(' '));
+
+const RULE_PACKS={
+ 'Method 1':[
+  ['Sampling location / duct geometry',['sampling location','upstream','downstream','duct diameter','stack diameter','port']],
+  ['Traverse-point determination',['traverse point','traverse points','minimum number of points']],
+  ['Cyclonic-flow evaluation',['cyclonic','yaw angle','flow angle']]
+ ],
+ 'Method 2':[
+  ['Pitot identification and coefficient',['pitot','coefficient',' cp ','cp=']],
+  ['Velocity-pressure data',['delta p','Δp','velocity pressure','differential pressure']],
+  ['Stack temperature',['stack temperature','temperature']],
+  ['Static and barometric pressure',['static pressure','barometric pressure']]
+ ],
+ 'Method 4':[
+  ['Moisture determination',['moisture','impinger','water vapor']],
+  ['Initial/final impinger values',['initial weight','final weight','initial mass','final mass']]
+ ],
+ 'Method 5':[
+  ['Method 1/2/3/4 supporting data',['traverse','pitot','molecular weight','moisture']],
+  ['Nozzle ID and diameter',['nozzle','nozzle diameter']],
+  ['Meter box / Y / ΔH@ calibration',['meter box','y factor','delta h@','dh@','calibration factor']],
+  ['Pre/post leak checks',['leak check','leak-check']],
+  ['Probe/filter/impinger temperatures',['probe temperature','filter temperature','impinger temperature']],
+  ['Dry gas volume / sample volume',['dry gas volume','dscf','sample volume','dgm']],
+  ['Isokinetic result',['isokinetic','isokinetics']],
+  ['Sample recovery documentation',['sample recovery','recovery sheet','acetone rinse']],
+  ['Chain of custody / sample IDs',['chain of custody','sample id','sample identification']]
+ ],
+ 'Method 5B':[
+  ['Method 5B train and run data',['method 5b','sampling train','run data']],
+  ['Leak checks',['leak check']],
+  ['Sample recovery',['recovery','sample recovery']]
+ ],
+ 'Method 17':[
+  ['In-stack filter configuration',['in-stack filter','filter holder','method 17']],
+  ['Isokinetic sampling data',['isokinetic','nozzle','pitot']],
+  ['Leak checks',['leak check']],
+  ['Sample recovery',['sample recovery','recovery']]
+ ],
+ 'Method 202':[
+  ['Condensable PM train documentation',['condensable','method 202','impinger']],
+  ['Post-run purge',['purge','nitrogen purge']],
+  ['Field/reagent blanks',['field blank','reagent blank','blank']],
+  ['Sample recovery',['sample recovery','recovery']]
+ ],
+ 'Method 29':[
+  ['Isokinetic train support',['isokinetic','nozzle','pitot','method 29']],
+  ['Train leak checks',['leak check']],
+  ['Reagent / blank documentation',['blank','reagent','field blank']],
+  ['Sample recovery',['sample recovery','recovery']],
+  ['Chain of custody',['chain of custody','sample id']],
+  ['Laboratory QA/QC',['laboratory','lab qc','spike','recovery','blank']],
+  ['Analytical result support',['analytical result','metals','detection limit']]
+ ],
+ 'Method 26A':[
+  ['Isokinetic train support',['isokinetic','nozzle','pitot']],
+  ['Leak checks',['leak check']],
+  ['Reagent / blank documentation',['blank','reagent']],
+  ['Sample recovery',['sample recovery','recovery']],
+  ['Chain of custody / lab support',['chain of custody','laboratory','sample id']]
+ ],
+ 'Method 23':[
+  ['Sampling-train documentation',['method 23','sampling train','resin']],
+  ['Leak checks',['leak check']],
+  ['Sample recovery',['sample recovery','recovery']],
+  ['Surrogate / standard documentation',['surrogate','standard']],
+  ['Blank and lab QA/QC',['blank','laboratory','lab qc','recovery']],
+  ['Chain of custody',['chain of custody','sample id']]
+ ],
+ 'Method 19':[
+  ['Fuel factor / F-factor basis',['fuel factor','f factor','f-factor','fd','fc']],
+  ['O2 / CO2 basis',['oxygen','o2','co2']],
+  ['Wet/dry basis',['wet basis','dry basis','wet to dry']],
+  ['Heat input / fuel data',['heat input','mmbtu','fuel flow','fuel data']]
+ ],
+ 'Part 60 RATA':[
+  ['Reference Method run data',['reference method','rm']],
+  ['CEMS run data',['cems']],
+  ['Relative Accuracy',['relative accuracy',' ra ']],
+  ['Bias determination',['bias']],
+  ['Applicable standard / criterion',['applicable source standard','performance required','ra limit']],
+  ['Statistical support',['standard deviation','confidence coefficient']]
+ ],
+ 'Part 75 RATA':[
+  ['Reference Method run data',['reference method','rm']],
+  ['CEMS run data',['cems']],
+  ['Relative Accuracy',['relative accuracy',' ra ']],
+  ['Bias determination',['bias']],
+  ['Part 75 basis',['part 75','40 cfr 75']]
+ ],
+ 'Instrumental':[
+  ['Calibration gases / standards',['calibration gas','cylinder','gas standard','protocol gas']],
+  ['Calibration error / analyzer calibration',['calibration error','calibration']],
+  ['Initial and final system bias',['system bias','bias check','initial bias','final bias']],
+  ['Zero / upscale checks',['zero','upscale','high-level']],
+  ['Drift / stability',['drift','stability']],
+  ['Response time',['response time']],
+  ['Interference / NO2 converter or method-specific QA',['interference','converter efficiency','interference check']],
+  ['Run start/end and data capture',['start time','end time','run time','data acquisition']]
+ ],
+ 'Method 320':[
+  ['FTIR QA / spectral system checks',['ftir','spectral','interferogram','method 320']],
+  ['Calibration / CTS / audit support',['calibration','cts','audit']],
+  ['Sample system / cell conditions',['cell temperature','cell pressure','sample line']],
+  ['Run data and concentration results',['run','concentration','ppm']]
+ ]
+};
+const INSTRUMENTAL_METHODS=new Set(['Method 3A','Method 6C','Method 7E','Method 10','Method 10B','Method 16C','Method 25A']);
+
+const MANUAL_CHECKS=[
+ ['permitVersion','Correct permit/version and applicable source/unit were reviewed.'],
+ ['planApproval','Test plan/protocol is the approved version and any agency approval conditions were included.'],
+ ['deviations','All field deviations, aborted/invalid runs, retests, and substitutions were identified and dispositioned.'],
+ ['process','Process operating data and control-device conditions represent the required test conditions.'],
+ ['runMatrix','Run count, run duration, sampling times, and pollutant/method matrix were manually confirmed.'],
+ ['calibrations','Calibration gas certifications, equipment calibrations, leak checks, bias/drift, and method QA were reviewed as applicable.'],
+ ['samples','Sample IDs, recovery sheets, chain of custody, lab reports, blanks, spikes/recoveries, and analytical QC were reconciled as applicable.'],
+ ['calculations','Key calculations were independently spot-checked from raw values through final units/basis.'],
+ ['crosscheck','Final report tables were reconciled to field sheets/workbooks/lab results for dates, run IDs, units, values, and standards.'],
+ ['limits','Applicable limits, averaging basis, oxygen correction, wet/dry basis, production basis, and compliance statements were confirmed.'],
+ ['attachments','Required appendices, field data, calibration records, lab support, and approvals are present.'],
+ ['finalRead','Final narrative was read for contradictions, copy-forward errors, wrong client/source names, and unsupported statements.']
+];
+let manualState=Object.fromEntries(MANUAL_CHECKS.map(([k])=>[k,false]));
+
+function fileExt(name){return (name.split('.').pop()||'').toLowerCase()}
+function locationLabel(seg){return seg.location?`${seg.file} • ${seg.location}`:seg.file}
+function tokens(s){return [...new Set(lower(s).replace(/[^a-z0-9.%/+-]+/g,' ').split(/\s+/).filter(x=>x.length>2&&!STOPWORDS.has(x)).slice(0,80))]}
+function numbers(s){return (norm(s).match(/(?:<|≤|>=?|~)?\s*-?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:runs?|%|ppmvd|ppmd|ppmw|ppm|lb\/mmbtu|lb\/hr|gr\/dscf|dscf|dscfm|scfm|minutes?|mins?|hours?|hrs?)?/gi)||[]).map(x=>lower(x).replace(/,/g,'').replace(/\s+/g,' '))}
+function methodsIn(text){return METHOD_PATTERNS.filter(([,re])=>re.test(text)).map(([n])=>n)}
+function pollutantsIn(text){return POLLUTANTS.filter(([,re])=>re.test(text)).map(([n])=>n)}
+function regulatoryIn(text){
+  const out=new Set();
+  for(const m of text.matchAll(/\b40\s*cfr\s*(60|61|63|75)(?:\s*[,.-]?\s*(?:subpart\s+)?([a-z0-9-]+))?/ig))out.add(`40 CFR ${m[1]}${m[2]?` / ${m[2].toUpperCase()}`:''}`);
+  for(const m of text.matchAll(/\bpart\s*(60|61|63|75)\b/ig))out.add(`Part ${m[1]}`);
+  return [...out];
+}
+function sentences(seg){
+  const raw=seg.text.replace(/\n{2,}/g,'\n').split(/\n|(?<=[.!?;])\s+(?=[A-Z0-9(])/).map(norm).filter(Boolean);
+  return raw.filter(x=>x.length>=18&&x.length<=1500);
+}
+function classifyReq(s){
+  const t=lower(s);
+  if(/method\s*\d|performance specification|\bps[- ]?\d/.test(t))return 'Method / Performance Specification';
+  if(/not exceed|limit|standard|lb\/|ppm|gr\/dscf|percent|%/.test(t))return 'Limit / Standard';
+  if(/run|minutes?|hours?|duration/.test(t))return 'Runs / Duration';
+  if(/operate|load|capacity|process|production|control device|fuel|heat input/.test(t))return 'Operating Condition';
+  if(/oxygen|o2|co2|wet basis|dry basis|corrected to/.test(t))return 'Basis / Correction';
+  if(/traverse|sampling location|port|duct diameter|stack diameter|cyclonic/.test(t))return 'Sampling Location';
+  if(/calibrat|bias|drift|leak check|response time|interference|audit/.test(t))return 'QA / Calibration';
+  if(/chain of custody|sample id|recovery|blank|laboratory|lab |spike|analytical/.test(t))return 'Sample / Laboratory';
+  if(/report|submit|notification|appendix|document/.test(t))return 'Reporting / Documentation';
+  return 'Other Requirement';
+}
+function sourceSeverity(source,type){
+  if(source==='Permit'&&['Method / Performance Specification','Limit / Standard','Runs / Duration','Operating Condition','Basis / Correction'].includes(type))return 'critical';
+  if(source==='Permit')return 'major';
+  if(['Method / Performance Specification','Runs / Duration','QA / Calibration'].includes(type))return 'major';
+  return 'review';
+}
+function cleanRequirementText(s){return norm(s).replace(/^[•\-–—\d.)\s]+/,'').trim()}
+function buildRequirements(doc,source){
+  const out=[],seen=new Set();
+  for(const seg of doc.segments){
+    for(const sentence of sentences(seg)){
+      const s=cleanRequirementText(sentence); if(!REQUIREMENT_RE.test(s))continue;
+      const fp=lower(s).replace(/\d+/g,'#').replace(/[^a-z#]+/g,' ').slice(0,240);
+      if(seen.has(fp))continue; seen.add(fp);
+      const type=classifyReq(s), m=methodsIn(s), p=pollutantsIn(s), n=numbers(s);
+      out.push({id:uid('req'),source,type,text:s,methods:m,pollutants:p,nums:n,sourceFile:seg.file,sourceLocation:seg.location||'',severity:sourceSeverity(source,type),planMatch:null,workMatch:null,resolution:'Open',notes:''});
+    }
+  }
+  return out.slice(0,600);
+}
+function corpusSegments(docs){return docs.flatMap(d=>d?.segments||[])}
+function similarity(req,seg){
+  const a=tokens(req.text), b=new Set(tokens(seg.text)); if(!a.length)return 0;
+  const overlap=a.filter(x=>b.has(x)).length/a.length;
+  let bonus=0;
+  const mt=req.methods.length?req.methods.filter(x=>methodsIn(seg.text).includes(x)).length/req.methods.length:0;
+  const pt=req.pollutants.length?req.pollutants.filter(x=>pollutantsIn(seg.text).includes(x)).length/req.pollutants.length:0;
+  const reqNums=req.nums.filter(x=>/\d/.test(x)), segNums=new Set(numbers(seg.text));
+  const nt=reqNums.length?reqNums.filter(x=>segNums.has(x)).length/reqNums.length:0;
+  if(req.methods.length)bonus+=mt*.24;if(req.pollutants.length)bonus+=pt*.15;if(reqNums.length)bonus+=nt*.21;
+  return Math.min(1,overlap*.65+bonus);
+}
+function findBest(req,segs){
+  let best=null,score=0;
+  for(const seg of segs){const s=similarity(req,seg);if(s>score){score=s;best=seg}}
+  let status='missing';
+  const numericSensitive=['Limit / Standard','Runs / Duration','Basis / Correction','Operating Condition'].includes(req.type);
+  const requiredNums=(req.nums||[]).filter(Boolean);
+  const evidenceNums=best?numbers(best.text):[];
+  const exactNumericMatch=!numericSensitive||!requiredNums.length||requiredNums.every(n=>evidenceNums.includes(n));
+  if(score>=.54&&exactNumericMatch)status='verified';
+  else if(score>=.32||score>=.54)status='review';
+  return {score,status,seg:best,exactNumericMatch};
+}
+function reconcileRequirements(reqs,planSegs,workSegs){
+  for(const r of reqs){
+    if(r.source==='Permit')r.planMatch=findBest(r,planSegs);else r.planMatch={score:1,status:'verified',seg:{file:r.sourceFile,location:r.sourceLocation,text:r.text}};
+    r.workMatch=findBest(r,workSegs);
+    if(r.source==='Permit'&&r.planMatch.status==='missing')r.severity='critical';
+    else if(r.workMatch.status==='missing'&&r.severity==='review')r.severity='major';
+    if(r.planMatch.status==='verified'&&r.workMatch.status==='verified')r.severity='verified';
+    else if(r.planMatch.status==='review'||r.workMatch.status==='review'){if(r.severity==='verified')r.severity='review'}
+  }
+}
+function snippet(req,match){
+  if(!match||!match.seg)return '';
+  const s=norm(match.seg.text), keys=[...req.methods,...req.pollutants,...tokens(req.text).slice(0,4)].filter(Boolean);
+  let idx=-1;for(const k of keys){idx=lower(s).indexOf(lower(k));if(idx>=0)break}
+  if(idx<0)idx=0;const start=Math.max(0,idx-130),end=Math.min(s.length,idx+260);
+  return (start?'…':'')+s.slice(start,end)+(end<s.length?'…':'');
+}
+function addMethodGate(arr,name,check,corpus,severity='major'){
+  const token=check[1].find(k=>lower(corpus).includes(lower(k)));
+  const found=!!token;
+  arr.push({
+    id:uid('gate'),method:name,title:check[0],status:'open',
+    severity:found?'review':severity,evidence:token||'',resolution:'Open',notes:'',
+    detail:found
+      ?`Possible evidence located (${token}). Reviewer must confirm it is complete, applicable, within acceptance criteria, and tied to the correct run/source before closing this gate.`
+      :'Required evidence was not confidently located in the completed work package.'
+  });
+}
+function buildMethodGates(requiredMethods,allText,regs){
+  const out=[];const packs=[];
+  for(const m of requiredMethods){if(RULE_PACKS[m])packs.push([m,RULE_PACKS[m]]);if(INSTRUMENTAL_METHODS.has(m))packs.push([m,RULE_PACKS.Instrumental]);}
+  if(requiredMethods.includes('Method 320'))packs.push(['Method 320',RULE_PACKS['Method 320']]);
+  if(regs.some(x=>/60/.test(x))&&/\brata\b/i.test(allText))packs.push(['Part 60 RATA',RULE_PACKS['Part 60 RATA']]);
+  if(regs.some(x=>/75/.test(x))&&/\brata\b/i.test(allText))packs.push(['Part 75 RATA',RULE_PACKS['Part 75 RATA']]);
+  const seen=new Set();
+  for(const [name,pack] of packs)for(const check of pack){const key=name+'|'+check[0];if(seen.has(key))continue;seen.add(key);addMethodGate(out,name,check,allText,'review')}
+  return out;
+}
+function structuralIssues(docs){
+  const out=[];
+  for(const d of docs){
+    if(d.quality&&d.quality.scanRisk)out.push({id:uid('int'),title:`Possible scanned/image PDF: ${d.name}`,detail:d.quality.message,severity:'critical',status:'open',resolution:'Open',notes:''});
+    for(const e of d.errors||[])out.push({id:uid('int'),title:e.title,detail:e.detail,severity:e.severity||'major',status:'open',resolution:'Open',notes:''});
+  }
+  return out;
+}
+function buildIntegrity(docs,requiredMethods,requiredPollutants,workText){
+  const out=structuralIssues(docs);
+  if(!requiredMethods.length)out.push({id:uid('int'),title:'No test method was confidently identified',detail:'A reviewer must manually identify the applicable methods/performance specifications from the permit and approved plan.',severity:'critical',status:'open',resolution:'Open',notes:''});
+  for(const m of requiredMethods)if(!methodsIn(workText).includes(m))out.push({id:uid('int'),title:`Required method not found in completed-work evidence — ${m}`,detail:`${m} was identified in the permit/test plan but was not confidently located in the completed report/field/calculation package.`,severity:'critical',status:'open',resolution:'Open',notes:''});
+  for(const p of requiredPollutants)if(!pollutantsIn(workText).includes(p))out.push({id:uid('int'),title:`Required pollutant/parameter not found — ${p}`,detail:`${p} was identified in the permit/test plan but not confidently located in the completed-work evidence.`,severity:'critical',status:'open',resolution:'Open',notes:''});
+  const explicitFails=[...workText.matchAll(/.{0,90}\b(fail|failed|out of tolerance|invalid run|void run)\b.{0,140}/ig)].slice(0,30);
+  for(const m of explicitFails)out.push({id:uid('int'),title:'Explicit failure / invalidity language detected',detail:norm(m[0]),severity:'critical',status:'open',resolution:'Open',notes:''});
+  if(!out.length)out.push({id:uid('int'),title:'No structural document/workbook exceptions detected',detail:'No scan-risk, spreadsheet structural errors, missing detected methods/pollutants, or explicit failure language was found by the automated integrity scan.',severity:'verified',status:'verified',resolution:'Verified',notes:''});
+  return out;
+}
+function resolutionClosed(x){
+  if(x.status==='verified'||x.severity==='verified')return true;
+  return !!(x.resolution&&x.resolution!=='Open'&&norm(x.notes).length>=3);
+}
+function coverageStatus(r){
+  if(r.status==='verified'||r.severity==='verified')return 'verified';
+  if(r.resolution&&r.resolution!=='Open'&&norm(r.notes).length>=3)return 'resolved';
+  if(r.resolution&&r.resolution!=='Open')return 'review';
+  return r.severity||'review';
+}
+function unresolvedItem(x){return !resolutionClosed(x)}
+function allDocs(){return [parsed.permit,parsed.plan,...parsed.work,...parsed.data].filter(Boolean)}
+function requiredText(){return `${parsed.permit?.text||''}\n${parsed.plan?.text||''}`}
+function completedText(){return [...parsed.work,...parsed.data].map(x=>x.text).join('\n')}
+function summarize(){
+  const reqs=analysis.requirements;
+  const counts={critical:0,major:0,review:0,verified:0};
+  for(const r of reqs){const s=coverageStatus(r);if(s==='resolved'||s==='verified')counts.verified++;else if(counts[s]!==undefined)counts[s]++}
+  const gatesOpen=analysis.methodGates.filter(unresolvedItem).length, intOpen=analysis.integrity.filter(unresolvedItem).length;
+  const manualOpen=Object.values(manualState).filter(x=>!x).length;
+  const open=counts.critical+counts.major+counts.review+gatesOpen+intOpen+manualOpen;
+  const coverage=reqs.length?Math.round((counts.verified/reqs.length)*100):0;
+  return {...counts,gatesOpen,intOpen,manualOpen,open,coverage};
+}
+function canComplete(){const s=summarize();return s.open===0&&analysis&&parsed.permit&&parsed.plan&&parsed.work.length}
+function updateStatus(){
+  if(!analysis)return;
+  const s=summarize();$('#kReq').textContent=analysis.requirements.length;$('#kCritical').textContent=s.critical;$('#kMajor').textContent=s.major;$('#kReview').textContent=s.review;$('#kVerified').textContent=s.verified;$('#kCoverage').textContent=s.coverage+'%';
+  const b=$('#statusBanner');b.className='card status-banner show '+(canComplete()?'ready':'hold');
+  $('#qaStatus').textContent=canComplete()?'QA STATUS: READY FOR COMPLETION':`QA STATUS: HOLD — ${s.open} ITEM${s.open===1?'':'S'} REQUIRE REVIEW`;
+  $('#qaStatusDetail').textContent=`Requirement exceptions: ${s.critical+s.major+s.review}. Method gates open: ${s.gatesOpen}. Integrity gates open: ${s.intOpen}. Manual gates remaining: ${s.manualOpen}.`;
+  $('#completeBtn').disabled=!canComplete();$('#completeHint').textContent=canComplete()?'All automated and manual gates are resolved.':'Resolve every open item and complete the final manual gate.';
+}
+async function parseFile(file){
+  const ext=fileExt(file.name), base={name:file.name,segments:[],text:'',errors:[],quality:null};
+  try{
+    if(ext==='pdf')return await parsePdf(file,base);
+    if(ext==='docx')return await parseDocx(file,base);
+    if(ext==='xlsx'||ext==='xls')return await parseExcel(file,base);
+    const text=await file.text();base.segments=[{file:file.name,location:'Document',text}];base.text=text;return base;
+  }catch(e){base.errors.push({title:`Could not fully parse ${file.name}`,detail:String(e?.message||e),severity:'critical'});return base}
+}
+async function getPdfJs(){
+  if(window.pdfjsLib)return window.pdfjsLib;
+  try{
+    const lib=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+    lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';return lib;
+  }catch(e){throw new Error('PDF parser could not load. Internet access may be required the first time this module is used.')}
+}
+async function parsePdf(file,base){
+  const pdfjs=await getPdfJs(), data=new Uint8Array(await file.arrayBuffer()), pdf=await pdfjs.getDocument({data}).promise;let short=0,total=0;
+  for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i),content=await page.getTextContent(),text=content.items.map(x=>x.str).join(' ');if(norm(text).length<35)short++;total+=norm(text).length;base.segments.push({file:file.name,location:`Page ${i}`,text})}
+  base.text=base.segments.map(x=>`[${x.location}] ${x.text}`).join('\n');
+  const ratio=pdf.numPages?short/pdf.numPages:1;base.quality={scanRisk:total<180||ratio>.35,message:`Text extraction was weak on ${short} of ${pdf.numPages} pages. Image/scanned content can hide requirements from text-based comparison; manual/OCR verification is required.`};return base;
+}
+async function parseDocx(file,base){
+  if(!window.mammoth)throw new Error('DOCX parser could not load.');
+  const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});base.segments=[{file:file.name,location:'DOCX text',text:r.value}];base.text=r.value;if(r.messages?.length)base.errors.push({title:`DOCX conversion notes — ${file.name}`,detail:r.messages.map(x=>x.message).join('; '),severity:'review'});return base;
+}
+async function parseExcel(file,base){
+  if(!window.XLSX)throw new Error('Excel parser could not load.');
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellFormula:true,cellNF:true,cellDates:true});
+  const hiddenByName={};(wb.Workbook?.Sheets||[]).forEach(x=>hiddenByName[x.name]=x.Hidden);
+  for(const name of wb.SheetNames){
+    const ws=wb.Sheets[name], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}), hidden=hiddenByName[name]?` • Hidden ${hiddenByName[name]}`:'';
+    const lines=rows.map(r=>r.map(norm).join(' | ')).filter(x=>x.replace(/\|/g,'').trim()).join('\n');
+    base.segments.push({file:file.name,location:`Sheet: ${name}${hidden}`,text:lines});
+    for(const addr of Object.keys(ws)){if(addr[0]==='!')continue;const c=ws[addr],v=norm(c.w??c.v);if(/^#REF!/i.test(v)||c.t==='e'&&v==='#REF!')base.errors.push({title:`Broken Excel reference — ${file.name}`,detail:`${name}!${addr} contains #REF!.`,severity:'critical'});else if(/^#(?:DIV\/0!|VALUE!|NAME\?|NUM!|N\/A)/i.test(v))base.errors.push({title:`Spreadsheet error — ${file.name}`,detail:`${name}!${addr} contains ${v}.`,severity:hiddenByName[name]?'review':'major'})}
+  }
+  base.text=base.segments.map(x=>`[${x.location}] ${x.text}`).join('\n');return base;
+}
+function statusEl(id,msg,good=true){const el=$(id);el.textContent=msg;el.className='file-status '+(good?'good':'bad')}
+async function handleSingle(kind,file,statusId){
+  files[kind]=file;statusEl(statusId,`Reading ${file.name}…`);
+  parsed[kind]=await parseFile(file);const e=parsed[kind].errors.length;statusEl(statusId,`${file.name}${e?` • ${e} parsing/structure note${e===1?'':'s'}`:''}`,!parsed[kind].errors.some(x=>x.severity==='critical'));readyState();
+}
+async function handleMulti(kind,list,statusId){
+  files[kind]=[...list];statusEl(statusId,`Reading ${list.length} file${list.length===1?'':'s'}…`);
+  parsed[kind]=[];for(const f of files[kind])parsed[kind].push(await parseFile(f));
+  const errors=parsed[kind].flatMap(x=>x.errors).length;statusEl(statusId,`${list.length} file${list.length===1?'':'s'} loaded${errors?` • ${errors} parsing/structure note${errors===1?'':'s'}`:''}`,!parsed[kind].some(d=>d.errors.some(x=>x.severity==='critical')));readyState();
+}
+function readyState(){
+  const ok=parsed.permit&&parsed.plan&&parsed.work.length;$('#runBtn').disabled=!ok;$('#runHint').textContent=ok?'Ready to build the requirement matrix and QA gates.':'Load permit, test plan, and completed work first.';
+}
+$('#permitFile').onchange=e=>e.target.files[0]&&handleSingle('permit',e.target.files[0],'#permitStatus');
+$('#planFile').onchange=e=>e.target.files[0]&&handleSingle('plan',e.target.files[0],'#planStatus');
+$('#workFiles').onchange=e=>e.target.files.length&&handleMulti('work',e.target.files,'#workStatus');
+$('#dataFiles').onchange=e=>e.target.files.length&&handleMulti('data',e.target.files,'#dataStatus');
+
+function runAnalysis(){
+  const permitReq=buildRequirements(parsed.permit,'Permit'),planReq=buildRequirements(parsed.plan,'Test Plan');
+  const pFinger=new Set(permitReq.map(r=>lower(r.text).replace(/\d+/g,'#').replace(/[^a-z#]+/g,' ').slice(0,160)));
+  const uniquePlan=planReq.filter(r=>!pFinger.has(lower(r.text).replace(/\d+/g,'#').replace(/[^a-z#]+/g,' ').slice(0,160)));
+  const reqs=[...permitReq,...uniquePlan],planSegs=corpusSegments([parsed.plan]),workSegs=corpusSegments([...parsed.work,...parsed.data]);
+  reconcileRequirements(reqs,planSegs,workSegs);
+  const reqText=requiredText(),workText=completedText(),requiredMethods=[...new Set(methodsIn(reqText))],requiredPollutants=[...new Set(pollutantsIn(reqText))],regs=regulatoryIn(reqText);
+  const integrity=buildIntegrity(allDocs(),requiredMethods,requiredPollutants,workText);
+  if(!permitReq.length)integrity.unshift({id:uid('int'),category:'Requirement Extraction',title:'No permit/regulatory requirements extracted',detail:'ReportFlow could not extract a usable requirement set from the permit/regulatory document. QA cannot be released until the permit is manually reviewed or a readable permit is provided.',severity:'critical',status:'open',resolution:'Open',notes:'',source:'Permit / Regulatory Basis'});
+  if(!planReq.length)integrity.unshift({id:uid('int'),category:'Requirement Extraction',title:'No approved test-plan requirements extracted',detail:'ReportFlow could not extract a usable requirement set from the test plan/protocol. QA cannot be released until the approved plan is manually reviewed or a readable plan is provided.',severity:'critical',status:'open',resolution:'Open',notes:'',source:'Approved Test Plan'});
+  if(!parsed.data.length)integrity.push({id:uid('int'),category:'Field / Calculation Evidence',title:'No field-data or calculation file loaded',detail:'The completed report package is present, but no separate field-data/calculation workbook was loaded. Resolve only after confirming the completed package itself contains all underlying data needed for QA, or upload the field/calculation files.',severity:'major',status:'open',resolution:'Open',notes:'',source:'Field Data / Calculations'});
+  analysis={createdAt:new Date().toISOString(),requirements:reqs,requiredMethods,requiredPollutants,regulations:regs,methodGates:buildMethodGates(requiredMethods,workText,regs),integrity};
+  manualState=Object.fromEntries(MANUAL_CHECKS.map(([k])=>[k,false]));
+  renderAll();saveSession();
+}
+function renderAll(){
+  $('#resultsCard').style.display='block';$('#kpis').style.display='grid';
+  const pills=[...analysis.regulations,...analysis.requiredMethods,...analysis.requiredPollutants].slice(0,18);$('#detectedPills').innerHTML=pills.map(x=>`<span class="pill">${esc(x)}</span>`).join('');
+  renderTypeOptions();renderRequirements();renderGates();renderIntegrity();renderManual();updateStatus();
+}
+function renderTypeOptions(){
+  const cur=$('#typeFilter').value,types=[...new Set(analysis.requirements.map(x=>x.type))].sort();$('#typeFilter').innerHTML='<option value="">All requirement types</option>'+types.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
+}
+function rowEvidence(req,match,label){
+  if(!match||match.status==='missing')return `<div class="evidence none"><b>${label}: NOT PROVEN</b><div class="src">No confident matching evidence found.</div></div>`;
+  return `<div class="evidence"><b>${label}: ${match.status==='verified'?'MATCH':'REVIEW MATCH'}</b><div>${esc(snippet(req,match))}</div><div class="src">${esc(locationLabel(match.seg))} • match ${Math.round(match.score*100)}%</div></div>`;
+}
+function renderRequirements(){
+  const q=lower($('#search').value),sf=$('#statusFilter').value,tf=$('#typeFilter').value;
+  let rows=analysis.requirements.filter(r=>!q||lower([r.text,r.type,r.source,r.sourceFile,...r.methods,...r.pollutants].join(' ')).includes(q)).filter(r=>!tf||r.type===tf);
+  rows=rows.filter(r=>{const s=coverageStatus(r);if(sf==='all')return true;if(sf==='open')return !['verified','resolved'].includes(s);if(sf==='verified')return ['verified','resolved'].includes(s);return s===sf});
+  $('#reqBody').innerHTML=rows.length?rows.map(r=>`<tr data-req="${r.id}">
+    <td><span class="badge ${coverageStatus(r)}">${esc(coverageStatus(r).toUpperCase())}</span></td>
+    <td><div class="req">${esc(r.text)}</div><div class="src">${esc(r.source)} • ${esc(r.type)} • ${esc(r.sourceFile)}${r.sourceLocation?' • '+esc(r.sourceLocation):''}</div>${r.methods.length?`<div class="src">${r.methods.map(esc).join(' • ')}</div>`:''}</td>
+    <td>${rowEvidence(r,r.planMatch,'Plan')}</td>
+    <td>${rowEvidence(r,r.workMatch,'Work')}</td>
+    <td><select class="resolution" data-resolution="${r.id}"><option ${r.resolution==='Open'?'selected':''}>Open</option><option ${r.resolution==='Corrected'?'selected':''}>Corrected</option><option ${r.resolution==='Approved Deviation'?'selected':''}>Approved Deviation</option><option ${r.resolution==='Not Applicable'?'selected':''}>Not Applicable</option><option ${r.resolution==='Reviewer Accepted'?'selected':''}>Reviewer Accepted</option></select></td>
+    <td><textarea class="notes" data-notes="${r.id}" placeholder="Reason / correction / approval reference...">${esc(r.notes)}</textarea></td>
+  </tr>`).join(''):`<tr><td colspan="6" class="empty">No requirements match the current filter.</td></tr>`;
+  $$('[data-resolution]').forEach(el=>el.onchange=()=>{const r=analysis.requirements.find(x=>x.id===el.dataset.resolution);r.resolution=el.value;renderRequirements();updateStatus();saveSession()});
+  $$('[data-notes]').forEach(el=>el.onchange=()=>{const r=analysis.requirements.find(x=>x.id===el.dataset.notes);r.notes=el.value;renderRequirements();updateStatus();saveSession()});
+}
+function renderGateList(list,container,kind){
+  $(container).innerHTML=list.length?list.map(g=>`<div class="gate">
+    <div><b>${esc(g.method?g.method+' — ':'')}${esc(g.title)}</b><div class="meta">${esc(g.detail|| (g.status==='verified'?`Evidence token located: ${g.evidence}`:'Required evidence was not confidently located. Review the completed package and document the disposition.'))}</div></div>
+    <div class="right"><span class="badge ${g.resolution!=='Open'?'resolved':g.severity}">${esc(g.resolution!=='Open'?'RESOLVED':g.severity.toUpperCase())}</span><select class="resolution" data-${kind}-res="${g.id}" ${g.status==='verified'?'disabled':''}><option ${g.resolution==='Open'?'selected':''}>Open</option><option ${g.resolution==='Corrected'?'selected':''}>Corrected</option><option ${g.resolution==='Approved Deviation'?'selected':''}>Approved Deviation</option><option ${g.resolution==='Not Applicable'?'selected':''}>Not Applicable</option><option ${g.resolution==='Reviewer Accepted'?'selected':''}>Reviewer Accepted</option></select><textarea class="notes" data-${kind}-note="${g.id}" placeholder="Required for manual resolution — document what you verified and why...">${esc(g.notes||'')}</textarea></div>
+  </div>`).join(''):'<div class="empty">No gates were generated.</div>';
+  $$(`[data-${kind}-res]`).forEach(el=>el.onchange=()=>{const g=list.find(x=>x.id===el.getAttribute(`data-${kind}-res`));g.resolution=el.value;renderGateList(list,container,kind);updateStatus();saveSession()});
+  $$(`[data-${kind}-note]`).forEach(el=>el.onchange=()=>{const g=list.find(x=>x.id===el.getAttribute(`data-${kind}-note`));g.notes=el.value;updateStatus();saveSession()});
+}
+function renderGates(){renderGateList(analysis.methodGates,'#methodList','gate')}
+function renderIntegrity(){renderGateList(analysis.integrity,'#integrityList','int')}
+function renderManual(){
+  $('#manualChecks').innerHTML=MANUAL_CHECKS.map(([k,t])=>`<div class="manual"><label><input type="checkbox" data-manual="${k}" ${manualState[k]?'checked':''}><span>${esc(t)}</span></label><small>This gate requires reviewer confirmation; automated text matching cannot safely replace it.</small></div>`).join('');
+  $$('[data-manual]').forEach(el=>el.onchange=()=>{manualState[el.dataset.manual]=el.checked;updateStatus();saveSession()});
+}
+$('#checkAllManual').onclick=()=>{Object.keys(manualState).forEach(k=>manualState[k]=true);renderManual();updateStatus();saveSession()};
+$('#uncheckAllManual').onclick=()=>{Object.keys(manualState).forEach(k=>manualState[k]=false);renderManual();updateStatus();saveSession()};
+$('#runBtn').onclick=runAnalysis;
+$('#search').oninput=renderRequirements;$('#statusFilter').onchange=renderRequirements;$('#typeFilter').onchange=renderRequirements;
+$('#clearFilters').onclick=()=>{$('#search').value='';$('#statusFilter').value='open';$('#typeFilter').value='';renderRequirements()};
+$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.toggle('active',x===t));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===t.dataset.panel))});
+$('#printBtn').onclick=()=>window.print();
+
+function saveSession(){
+  if(!analysis)return;
+  const snap={analysis,manualState,fileNames:{permit:files.permit?.name||'',plan:files.plan?.name||'',work:files.work.map(x=>x.name),data:files.data.map(x=>x.name)}};
+  try{localStorage.setItem('reportflow_qa_compare_last',JSON.stringify(snap))}catch(e){}
+}
+function exportCsv(){
+  if(!analysis)return alert('Run QA comparison first.');
+  const rows=[['Severity','Source','Type','Requirement','Source File','Source Location','Plan Status','Plan Evidence Location','Work Status','Work Evidence Location','Resolution','Reviewer Notes']];
+  for(const r of analysis.requirements)rows.push([coverageStatus(r),r.source,r.type,r.text,r.sourceFile,r.sourceLocation,r.planMatch?.status||'',r.planMatch?.seg?locationLabel(r.planMatch.seg):'',r.workMatch?.status||'',r.workMatch?.seg?locationLabel(r.workMatch.seg):'',r.resolution,r.notes]);
+  rows.push([]);rows.push(['METHOD / INTEGRITY GATES']);
+  for(const g of [...analysis.methodGates,...analysis.integrity])rows.push([g.severity,g.method||'',g.title,g.detail||g.evidence||'','','','','','','',g.resolution,g.notes||'']);
+  rows.push([]);rows.push(['FINAL MANUAL GATES']);
+  for(const [k,t] of MANUAL_CHECKS)rows.push([manualState[k]?'verified':'open','Manual Gate','',t,'','','','','','','',manualState[k]?'Confirmed':'Open','']);
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`reportflow_qa_compare_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#exportBtn').onclick=exportCsv;
+$('#completeBtn').onclick=()=>{if(!canComplete())return;analysis.completedAt=new Date().toISOString();saveSession();$('#qaStatus').textContent='QA STATUS: COMPLETE';$('#qaStatusDetail').textContent=`All automated exceptions, method/integrity gates, and final manual gates were resolved. Completed ${new Date(analysis.completedAt).toLocaleString()}.`;$('#statusBanner').className='card status-banner show ready';$('#completeBtn').disabled=true;$('#completeBtn').textContent='QA Complete';};
+$('#resetBtn').onclick=()=>{if(!confirm('Reset the current QA Compare workspace?'))return;files={permit:null,plan:null,work:[],data:[]};parsed={permit:null,plan:null,work:[],data:[]};analysis=null;manualState=Object.fromEntries(MANUAL_CHECKS.map(([k])=>[k,false]));['#permitFile','#planFile','#workFiles','#dataFiles'].forEach(x=>$(x).value='');statusEl('#permitStatus','Required',false);statusEl('#planStatus','Required',false);statusEl('#workStatus','At least one required',false);$('#dataStatus').textContent='Recommended for deep QA';$('#dataStatus').className='file-status';$('#resultsCard').style.display='none';$('#kpis').style.display='none';$('#statusBanner').className='card status-banner';$('#detectedPills').innerHTML='';readyState();localStorage.removeItem('reportflow_qa_compare_last')};
+</script>
+</body>
+</html>
