@@ -1,0 +1,24 @@
+name: Cane Line Voice Transfer
+on:
+  push:
+    paths:
+      - ".github/workflows/cane-line-voice-transfer.yml"
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download voice
+        run: |
+          mkdir -p tmp-cane-line-transfer
+          curl -L --fail -o /tmp/voice.mp3 "https://cdn.creativeclaw.co/u/c129bbd3/audio/0d9c6d79-8a32-4568-acf1-c47865c5f552.mp3"
+          base64 -w0 /tmp/voice.mp3 > tmp-cane-line-transfer/voice.b64.txt
+      - name: Commit transfer file
+        run: |
+          git config user.name "Cane Line Transfer"
+          git config user.email "actions@users.noreply.github.com"
+          git add tmp-cane-line-transfer/voice.b64.txt
+          git commit -m "Temporary Cane Line voice transfer" || exit 0
+          git push
