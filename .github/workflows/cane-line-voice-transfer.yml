@@ -1,24 +1,28 @@
-name: Cane Line Voice Transfer
+name: Cane Line Final Artifact
 on:
   push:
     paths:
       - ".github/workflows/cane-line-voice-transfer.yml"
 permissions:
-  contents: write
+  contents: read
+  actions: write
 jobs:
-  transfer:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Download voice
+      - name: Download corrected video master
         run: |
-          mkdir -p tmp-cane-line-transfer
-          curl -L --fail -o /tmp/voice.mp3 "https://cdn.creativeclaw.co/u/c129bbd3/audio/0d9c6d79-8a32-4568-acf1-c47865c5f552.mp3"
-          base64 -w0 /tmp/voice.mp3 > tmp-cane-line-transfer/voice.b64.txt
-      - name: Commit transfer file
+          curl -L --fail -o master.mp4 "https://cdn.creativeclaw.co/u/c129bbd3/videos/1dc0eea8-a105-47fb-80dc-3021472e0776.mp4"
+      - name: Download deep narrator
         run: |
-          git config user.name "Cane Line Transfer"
-          git config user.email "actions@users.noreply.github.com"
-          git add tmp-cane-line-transfer/voice.b64.txt
-          git commit -m "Temporary Cane Line voice transfer" || exit 0
-          git push
+          curl -L --fail -o voice.mp3 "https://cdn.creativeclaw.co/u/c129bbd3/audio/0d9c6d79-8a32-4568-acf1-c47865c5f552.mp3"
+      - name: Merge voice onto video
+        run: |
+          ffmpeg -y -i master.mp4 -i voice.mp3 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 160k Cane_Line_Road_Final_Voiced.mp4
+      - name: Upload final reel
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cane-Line-Road-Final-Voiced
+          path: Cane_Line_Road_Final_Voiced.mp4
+          if-no-files-found: error
+          retention-days: 1
