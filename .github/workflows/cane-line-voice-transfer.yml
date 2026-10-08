@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
       - name: Download corrected video master
         run: |
           curl -L --fail -o master.mp4 "https://cdn.creativeclaw.co/u/c129bbd3/videos/1dc0eea8-a105-47fb-80dc-3021472e0776.mp4"
