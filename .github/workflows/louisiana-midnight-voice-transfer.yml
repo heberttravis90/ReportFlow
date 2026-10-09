@@ -1,0 +1,22 @@
+name: Louisiana Midnight Voice Transfer
+on:
+  push:
+    paths:
+      - ".github/workflows/louisiana-midnight-voice-transfer.yml"
+permissions:
+  contents: read
+  actions: write
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download deep narrator
+        run: |
+          curl -L --fail -o louisiana_after_midnight_voice.mp3 "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/d4b15856-04d5-4bea-837e-c1aad16f7e35.mp3"
+      - name: Upload narrator
+        uses: actions/upload-artifact@v4
+        with:
+          name: Louisiana-After-Midnight-Voice
+          path: louisiana_after_midnight_voice.mp3
+          if-no-files-found: error
+          retention-days: 1
